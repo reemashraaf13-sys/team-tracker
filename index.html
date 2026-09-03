@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cadence — Weekly Tracker</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231F6F6B'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Arial' font-weight='800' fill='white' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E">
+<title>Tamaseh Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231F6F6B'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Arial' font-weight='800' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
@@ -110,6 +110,9 @@
   .setup-banner strong{ font-weight:800; }
   .app{ display:flex; min-height:100vh; }
 
+  /* ---------- Passkey gate ---------- */
+  .passkey-gate{ position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:200; padding:20px; }
+
   /* ---------- Sidebar ---------- */
   .sidebar{
     width:236px; flex:none; background:var(--surface); border-right:1px solid var(--border);
@@ -179,6 +182,8 @@
     cursor:pointer; color:var(--text); margin-left:2px;
   }
   .week-today:hover{ background:var(--surface-3); }
+  .range-mode-toggle{ display:flex; gap:2px; margin-right:4px; }
+  .range-mode-toggle .toggle-chip{ padding:5px 10px; font-size:11px; }
 
   .view{ display:flex; flex-direction:column; gap:20px; }
 
@@ -201,15 +206,6 @@
 
   .two-col{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
 
-  .summary-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px 20px 20px; }
-  .summary-block label{ display:block; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint); margin-bottom:6px; }
-  .summary-block textarea{
-    width:100%; min-height:96px; resize:vertical; border:1px solid var(--border); border-radius:10px; padding:10px 12px;
-    background:var(--surface-2); color:var(--text); line-height:1.5;
-  }
-  .summary-block textarea:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
-  .summary-saved{ font-size:10.5px; color:var(--text-faint); margin-top:5px; height:12px; }
-
   .mini-list{ display:flex; flex-direction:column; }
   .mini-row{ display:flex; align-items:center; gap:10px; padding:10px 20px; border-top:1px solid var(--border); font-size:13px; }
   .mini-row:first-child{ border-top:none; }
@@ -223,17 +219,12 @@
   .pill.status-inprogress{ background:var(--accent-soft); color:var(--accent-strong); }
   .pill.status-blocked{ background:var(--amber-soft); color:var(--amber); }
   .pill.status-done{ background:var(--green-soft); color:var(--green); }
-  .pill.priority-high{ background:var(--red-soft); color:var(--red); }
-  .pill.priority-medium{ background:var(--amber-soft); color:var(--amber); }
-  .pill.priority-low{ background:var(--slate-soft); color:var(--slate); }
   .pill.overdue{ background:var(--red-soft); color:var(--red); }
   .pill.example{ background:var(--surface-2); color:var(--text-faint); border:1px dashed var(--border-strong); }
   .pill.pstatus-active{ background:var(--accent-soft); color:var(--accent-strong); }
   .pill.pstatus-submitted{ background:var(--amber-soft); color:var(--amber); }
   .pill.pstatus-closed{ background:var(--slate-soft); color:var(--slate); }
   .project-tag{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:var(--accent-strong); background:var(--accent-soft); border-radius:6px; padding:2px 8px; }
-  select.project-select{ border:1px solid transparent; background:transparent; color:var(--text); font-size:12.5px; font-weight:600; cursor:pointer; border-radius:6px; padding:3px 4px; max-width:150px; }
-  select.project-select:hover{ background:var(--surface-2); }
 
   select.pill-select{
     appearance:none; -webkit-appearance:none; border:none; cursor:pointer; padding:4px 22px 4px 10px; border-radius:999px;
@@ -243,9 +234,9 @@
   select.status-inprogress{ background-color:var(--accent-soft); color:var(--accent-strong); }
   select.status-blocked{ background-color:var(--amber-soft); color:var(--amber); }
   select.status-done{ background-color:var(--green-soft); color:var(--green); }
-  select.priority-high{ background-color:var(--red-soft); color:var(--red); }
-  select.priority-medium{ background-color:var(--amber-soft); color:var(--amber); }
-  select.priority-low{ background-color:var(--slate-soft); color:var(--slate); }
+  select.pstatus-active{ background-color:var(--accent-soft); color:var(--accent-strong); }
+  select.pstatus-submitted{ background-color:var(--amber-soft); color:var(--amber); }
+  select.pstatus-closed{ background-color:var(--slate-soft); color:var(--slate); }
 
   /* ---------- Filter bar ---------- */
   .filter-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -262,8 +253,6 @@
   .btn-primary:hover{ background:var(--accent-strong); border-color:var(--accent-strong); }
   .btn-ghost{ border-color:transparent; background:transparent; color:var(--text-muted); }
   .btn-ghost:hover{ background:var(--surface-2); color:var(--text); }
-  .btn-danger-ghost{ border-color:transparent; background:transparent; color:var(--text-faint); }
-  .btn-danger-ghost:hover{ background:var(--red-soft); color:var(--red); }
   .spacer{ flex:1; }
   .toggle-chip{
     border:1px solid var(--border); background:var(--surface); color:var(--text-muted); border-radius:999px; padding:6px 12px;
@@ -282,36 +271,24 @@
   .add-form .task-title{ flex:1 1 220px; }
   .add-form .task-notes{ flex:1 1 100%; min-height:44px; resize:vertical; }
 
-  /* ---------- Table ---------- */
-  .table-wrap{ overflow-x:auto; }
-  table.tasks-table{ width:100%; border-collapse:collapse; min-width:820px; }
-  table.tasks-table th{
-    text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint);
-    padding:10px 12px; border-bottom:1px solid var(--border); font-weight:700; white-space:nowrap;
-  }
-  table.tasks-table td{ padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:middle; font-size:13px; }
-  table.tasks-table tbody tr:last-child td{ border-bottom:none; }
-  table.tasks-table tbody tr:hover{ background:var(--surface-2); }
-  table.tasks-table tbody tr.is-overdue{ box-shadow:inset 3px 0 0 var(--red); }
-  table.tasks-table tbody tr.is-done{ opacity:.62; }
-  td.col-title{ min-width:200px; }
   .task-title-text{ font-weight:600; outline:none; border-radius:5px; padding:2px 4px; margin:-2px -4px; }
   .task-title-text:focus{ background:var(--surface-2); box-shadow:var(--focus); }
-  .task-notes-text{ font-size:11.5px; color:var(--text-muted); outline:none; border-radius:5px; padding:2px 4px; margin:1px -4px 0; display:block; }
-  .task-notes-text:focus{ background:var(--surface-2); box-shadow:var(--focus); }
-  .task-notes-text:empty::before{ content:"add a note…"; color:var(--text-faint); }
-  .owner-chip{ display:inline-flex; align-items:center; gap:6px; }
-  .owner-dot{ width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:8.5px; font-weight:700; color:#fff; flex:none; }
-  select.owner-select{ border:1px solid transparent; background:transparent; color:var(--text); font-size:13px; font-weight:600; cursor:pointer; border-radius:6px; padding:3px 4px; }
-  select.owner-select:hover{ background:var(--surface-2); }
   input.deadline-input{ border:1px solid transparent; background:transparent; color:var(--text); font-size:12.5px; border-radius:6px; padding:3px 5px; font-family:"IBM Plex Mono",monospace; }
   input.deadline-input:hover{ background:var(--surface-2); border-color:var(--border); }
-  .row-actions{ display:flex; gap:4px; opacity:0; transition:opacity .1s; }
-  tr:hover .row-actions{ opacity:1; }
-  .icon-btn{ border:none; background:transparent; color:var(--text-faint); cursor:pointer; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; }
+  .icon-btn{ border:none; background:transparent; color:var(--text-faint); cursor:pointer; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex:none; }
   .icon-btn:hover{ background:var(--red-soft); color:var(--red); }
   .empty-state{ padding:40px 20px; text-align:center; color:var(--text-faint); }
   .empty-state strong{ display:block; color:var(--text-muted); font-size:14px; margin-bottom:4px; }
+
+  /* ---------- Owner picker (multi-select chips) ---------- */
+  .owner-picker{ display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+  .mini-chip{
+    width:24px; height:24px; border-radius:50%; border:1.5px solid var(--border); background:var(--surface);
+    color:var(--text-faint); font-size:9.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    padding:0; flex:none; transition:transform .08s;
+  }
+  .mini-chip:hover{ transform:scale(1.1); border-color:var(--border-strong); }
+  .mini-chip.on{ color:#fff; border-color:transparent; }
 
   /* ---------- Meetings ---------- */
   .meeting-list{ display:flex; flex-direction:column; gap:12px; }
@@ -323,9 +300,11 @@
   .meeting-meta .mono{ color:var(--text-faint); }
   .attendee-dots{ display:flex; }
   .attendee-dots .presence-dot{ width:20px; height:20px; font-size:9px; }
-  .meeting-agenda{ margin-top:10px; font-size:13px; color:var(--text); outline:none; border-radius:6px; padding:6px 8px; margin-left:-8px; background:var(--surface-2); min-height:20px; }
-  .meeting-agenda:focus{ box-shadow:var(--focus); background:var(--surface); }
-  .meeting-agenda:empty::before{ content:"Add an agenda…"; color:var(--text-faint); }
+  .meeting-notes-text{
+    margin-top:10px; width:100%; min-height:70px; resize:vertical; font-size:13px; color:var(--text);
+    border:1px solid var(--border); border-radius:8px; padding:8px 10px; background:var(--surface-2); font-family:inherit; line-height:1.5;
+  }
+  .meeting-notes-text:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
   .action-items{ margin-top:10px; display:flex; flex-direction:column; gap:6px; }
   .action-item{ display:flex; align-items:center; gap:8px; font-size:12.5px; }
   .action-item input[type="checkbox"]{ accent-color:var(--accent); width:14px; height:14px; flex:none; }
@@ -335,18 +314,40 @@
   .add-action-item{ display:flex; gap:6px; margin-top:8px; }
   .add-action-item input{ flex:1; border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; }
 
-  /* ---------- Projects / pipeline ---------- */
-  .pipeline-row{ display:flex; align-items:center; gap:12px; padding:11px 20px; border-top:1px solid var(--border); }
-  .pipeline-row:first-child{ border-top:none; }
-  .pipeline-name{ font-weight:700; font-size:13px; }
-  .pipeline-client{ font-size:11.5px; color:var(--text-faint); }
-  .pipeline-stat{ font-size:12px; color:var(--text-muted); white-space:nowrap; }
-  .pipeline-stat.danger{ color:var(--red); font-weight:700; }
-  .project-card{ padding:14px 16px; display:flex; align-items:center; gap:12px; }
-  .project-card-name{ font-weight:700; font-size:13.5px; }
-  .project-card-client input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:5px 8px; font-size:12px; width:150px; }
+  /* ---------- Proposals (merged with tasks) ---------- */
+  .proposal-card{ padding:16px 18px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:10px; }
+  .proposal-card:first-child{ border-top:none; }
+  .proposal-top{ display:flex; align-items:center; gap:10px; }
   .project-name-input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:13.5px; font-weight:700; width:100%; }
-  .project-name-input:focus, .project-card-client input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
+  .project-name-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
+  .proposal-top .project-name-input{ flex:1 1 240px; }
+  .proposal-meta-grid{ display:grid; grid-template-columns:repeat(4,1fr) auto; gap:8px; }
+  .proposal-meta-grid input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; width:100%; }
+  .proposal-meta-grid input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
+  .proposal-meta-grid label.submit-by{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-faint); white-space:nowrap; }
+  .proposal-meta-grid label.submit-by input{ width:130px; }
+  .proposal-owners-row{ display:flex; align-items:center; gap:8px; }
+  .proposal-tasks{ background:var(--surface-2); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
+  .proposal-task-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
+  .proposal-task-row .task-title-text{ flex:1 1 160px; min-width:0; }
+  .add-task-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:4px 2px; }
+  .add-task-row input[type="text"]{ flex:1 1 200px; border:1px solid var(--border); background:var(--surface); border-radius:7px; padding:7px 9px; font-size:12.5px; }
+  .add-task-row input[type="date"]{ border:1px solid var(--border); background:var(--surface); border-radius:7px; padding:6px 8px; font-size:12px; }
+  .add-task-row input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); }
+  .proposal-tasks-empty{ font-size:12px; color:var(--text-faint); padding:4px 2px; }
+
+  /* ---------- Team snapshot (dashboard) ---------- */
+  .person-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; padding:14px 20px 20px; }
+  .person-card{ border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--surface-2); display:flex; flex-direction:column; gap:8px; }
+  .person-card-head{ display:flex; align-items:center; gap:8px; }
+  .person-card-name{ font-weight:700; font-size:13px; }
+  .person-card-role{ font-size:10.5px; color:var(--text-faint); }
+  .person-items{ display:flex; flex-direction:column; gap:3px; min-height:18px; }
+  .person-item{ font-size:11.5px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .person-item.overdue{ color:var(--red); font-weight:600; }
+  .person-item.muted{ color:var(--text-faint); }
+  .person-empty{ font-size:11.5px; color:var(--text-faint); font-style:italic; }
+  .person-foot{ font-size:11px; color:var(--text-faint); margin-top:auto; padding-top:6px; border-top:1px solid var(--border); }
 
   /* ---------- Team ---------- */
   .team-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
@@ -377,32 +378,40 @@
     .main{ padding:18px 16px 40px; }
     .tiles{ grid-template-columns:repeat(2,1fr); }
     .two-col{ grid-template-columns:1fr; }
-    .summary-grid{ grid-template-columns:1fr; }
+    .proposal-meta-grid{ grid-template-columns:1fr 1fr; }
   }
 </style>
 </head>
 <body>
+
+<div id="passkeyGate" class="passkey-gate">
+  <div class="modal">
+    <h2>Tamaseh Tracker</h2>
+    <p class="muted">Enter the team passkey to continue.</p>
+    <form id="passkeyForm" style="display:flex; flex-direction:column; gap:10px;">
+      <input type="password" id="passkeyInput" placeholder="Passkey" autofocus required
+        style="border:1px solid var(--border); background:var(--surface-2); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text);">
+      <button type="submit" class="btn btn-primary" style="justify-content:center;">Enter</button>
+      <div id="passkeyError" style="color:var(--red); font-size:12px; height:14px; text-align:center;">&nbsp;</div>
+    </form>
+  </div>
+</div>
+
 <div id="setupBanner" class="setup-banner" hidden>
   <strong>Firebase isn't connected yet.</strong>&nbsp;You're viewing a local preview with example data — nothing you enter here will be shared or saved. Follow the setup guide to go live for the team.
 </div>
-<div class="app">
+<div class="app" id="appRoot" hidden>
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-mark">C</div>
+      <div class="brand-mark">T</div>
       <div>
-        <div class="brand-name">Cadence</div>
-        <div class="brand-sub">Weekly ops tracker</div>
+        <div class="brand-name">Tamaseh Tracker</div>
       </div>
     </div>
     <nav class="nav" id="nav">
       <button class="nav-item active" data-view="dashboard">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         Dashboard
-      </button>
-      <button class="nav-item" data-view="tasks">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h9"/><circle cx="20" cy="18" r="0" /></svg>
-        Tasks
-        <span class="count" id="navCountTasks">0</span>
       </button>
       <button class="nav-item" data-view="meetings">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
@@ -438,39 +447,33 @@
         <p class="muted" id="viewSubtitle">This week at a glance, for the whole team.</p>
       </div>
       <div class="week-nav">
-        <button class="arrow" id="weekPrev" title="Previous week">‹</button>
+        <div class="range-mode-toggle" id="rangeModeToggle">
+          <button type="button" class="toggle-chip on" data-mode="week">Week</button>
+          <button type="button" class="toggle-chip" data-mode="month">Month</button>
+          <button type="button" class="toggle-chip" data-mode="year">Year</button>
+        </div>
+        <button class="arrow" id="rangePrev" title="Previous">‹</button>
         <div class="week-display">
           <span class="week-range mono" id="weekRange">–</span>
           <span class="week-id mono" id="weekIdLabel">–</span>
         </div>
-        <button class="arrow" id="weekNext" title="Next week">›</button>
-        <button class="week-today" id="weekToday">This week</button>
+        <button class="arrow" id="rangeNext" title="Next">›</button>
+        <button class="week-today" id="rangeToday">Today</button>
       </div>
     </header>
 
     <!-- DASHBOARD -->
     <section class="view" id="view-dashboard">
       <div class="tiles">
-        <div class="tile accent"><div class="tile-label">Tasks this week</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
+        <div class="tile accent"><div class="tile-label">Tasks due</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
         <div class="tile good"><div class="tile-label">Completed</div><div class="tile-value" id="statDone">0</div><div class="tile-sub" id="statDoneSub">&nbsp;</div></div>
         <div class="tile danger"><div class="tile-label">Overdue</div><div class="tile-value" id="statOverdue">0</div><div class="tile-sub" id="statOverdueSub">&nbsp;</div></div>
         <div class="tile warn"><div class="tile-label">Meetings</div><div class="tile-value" id="statMeetings">0</div><div class="tile-sub" id="statMeetingsSub">&nbsp;</div></div>
       </div>
 
       <div class="card">
-        <div class="card-head"><h2>Weekly summary — for the team leader</h2><span class="muted mono" id="summaryWeekLabel"></span></div>
-        <div class="summary-grid">
-          <div class="summary-block">
-            <label>Wins this week</label>
-            <textarea id="winsInput" placeholder="What went well, what shipped…"></textarea>
-            <div class="summary-saved" id="winsSaved">&nbsp;</div>
-          </div>
-          <div class="summary-block">
-            <label>Blockers / needs from leadership</label>
-            <textarea id="blockersInput" placeholder="What's stuck, what you need help with…"></textarea>
-            <div class="summary-saved" id="blockersSaved">&nbsp;</div>
-          </div>
-        </div>
+        <div class="card-head"><h2>Team snapshot</h2><span class="muted" id="personSnapshotLabel"></span></div>
+        <div class="person-grid" id="personGrid"></div>
       </div>
 
       <div class="card">
@@ -484,65 +487,8 @@
           <div class="mini-list" id="upcomingList"></div>
         </div>
         <div class="card">
-          <div class="card-head"><h2>Meetings this week</h2></div>
+          <div class="card-head"><h2>Meetings this range</h2></div>
           <div class="mini-list" id="dashMeetingsList"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TASKS -->
-    <section class="view" id="view-tasks" hidden>
-      <div class="filter-bar">
-        <select id="filterProject"><option value="all">All proposals</option></select>
-        <select id="filterOwner"><option value="all">All owners</option></select>
-        <select id="filterStatus">
-          <option value="all">All statuses</option>
-          <option value="Not Started">Not started</option>
-          <option value="In Progress">In progress</option>
-          <option value="Blocked">Blocked</option>
-          <option value="Done">Done</option>
-        </select>
-        <select id="filterPriority">
-          <option value="all">All priorities</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-        <select id="filterWeek"><option value="all">All weeks</option></select>
-        <button class="toggle-chip" id="filterMine">My tasks</button>
-        <div class="spacer"></div>
-        <button class="btn btn-ghost" id="clearExamplesTasks">Clear examples</button>
-      </div>
-
-      <div class="card">
-        <form class="add-form" id="addTaskForm">
-          <input type="text" class="task-title" id="newTaskTitle" placeholder="Add a task — e.g. Send revised proposal to Al Rajhi" required>
-          <select id="newTaskProject"></select>
-          <select id="newTaskOwner"></select>
-          <select id="newTaskPriority">
-            <option value="Medium" selected>Medium priority</option>
-            <option value="High">High priority</option>
-            <option value="Low">Low priority</option>
-          </select>
-          <input type="date" id="newTaskDeadline" title="Deadline (optional)">
-          <button type="submit" class="btn btn-primary">Add task</button>
-        </form>
-        <div class="table-wrap">
-          <table class="tasks-table">
-            <thead>
-              <tr>
-                <th style="width:24%">Task</th>
-                <th>Proposal</th>
-                <th>Owner</th>
-                <th>Priority</th>
-                <th>Deadline</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="tasksTbody"></tbody>
-          </table>
-          <div class="empty-state" id="tasksEmpty" hidden><strong>No tasks match these filters</strong>Try widening the filters above, or add a new task.</div>
         </div>
       </div>
     </section>
@@ -550,7 +496,7 @@
     <!-- MEETINGS -->
     <section class="view" id="view-meetings" hidden>
       <div class="filter-bar">
-        <select id="filterMeetingProject"><option value="all">All proposals</option></select>
+        <select id="filterMeetingClient"><option value="all">All clients</option></select>
         <select id="filterMeetingWeek"><option value="all">All weeks</option></select>
         <div class="spacer"></div>
         <button class="btn btn-ghost" id="clearExamplesMeetings">Clear examples</button>
@@ -560,13 +506,15 @@
         <form id="addMeetingForm" style="display:flex; flex-direction:column; gap:10px;">
           <div class="add-form" style="padding:0; background:none; border:none;">
             <input type="text" id="newMeetingTitle" class="task-title" placeholder="Meeting title — e.g. Weekly team sync" required>
-            <select id="newMeetingProject"></select>
+            <input type="text" id="newMeetingClient" list="clientSuggestions" placeholder="Client (optional) — e.g. Al Rajhi Takaful">
+            <datalist id="clientSuggestions"></datalist>
             <input type="date" id="newMeetingDate" required>
-            <input type="time" id="newMeetingTime" value="10:00">
+            <input type="time" id="newMeetingTime" value="10:00" title="Start time">
+            <input type="time" id="newMeetingEndTime" value="11:00" title="End time">
             <button type="submit" class="btn btn-primary">Add meeting</button>
           </div>
           <div id="newMeetingAttendees" class="filter-bar"></div>
-          <textarea id="newMeetingAgenda" class="task-notes" placeholder="Agenda (optional)" style="width:100%; min-height:40px;"></textarea>
+          <textarea id="newMeetingNotes" class="task-notes" placeholder="Notes (optional) — paste as bullet points, one per line" style="width:100%; min-height:60px;"></textarea>
         </form>
       </div>
 
@@ -574,24 +522,32 @@
       <div class="empty-state" id="meetingsEmpty" hidden><strong>No meetings yet</strong>Add your first one above.</div>
     </section>
 
-    <!-- PROJECTS / PROPOSALS -->
+    <!-- PROPOSALS (merged with tasks) -->
     <section class="view" id="view-projects" hidden>
       <div class="card card-pad">
         <form id="addProjectForm" class="add-form" style="padding:0; background:none; border:none;">
           <input type="text" class="task-title" id="newProjectName" placeholder="Proposal name — e.g. Al Rajhi Takaful Leadership Program" required>
-          <input type="text" id="newProjectClient" placeholder="Client (optional)" style="width:170px;">
+          <input type="text" id="newProjectClient" placeholder="Client *" required style="width:150px;">
+          <input type="text" id="newProjectBd" placeholder="BD" style="width:120px;">
+          <input type="text" id="newProjectLanguage" placeholder="Language" style="width:110px;">
+          <input type="text" id="newProjectCountry" placeholder="Country" style="width:110px;">
+          <input type="date" id="newProjectSubmitBy" title="Submit by">
           <select id="newProjectStatus">
             <option value="Active" selected>Active</option>
             <option value="Submitted">Submitted</option>
             <option value="Closed">Closed</option>
           </select>
           <button type="submit" class="btn btn-primary">Add proposal</button>
+          <div style="flex:1 1 100%; display:flex; align-items:center; gap:8px;">
+            <span class="muted" style="font-size:11.5px;">Owners:</span>
+            <div class="owner-picker" id="newProjectOwners"></div>
+          </div>
         </form>
       </div>
       <div class="card" id="projectsListCard">
         <div id="projectsList"></div>
       </div>
-      <div class="empty-state" id="projectsEmpty" hidden><strong>No proposals yet</strong>Add your first one above — tasks and meetings can then be tied to it.</div>
+      <div class="empty-state" id="projectsEmpty" hidden><strong>No proposals yet</strong>Add your first one above.</div>
     </section>
 
     <!-- TEAM -->
@@ -612,8 +568,6 @@
     <div class="modal-close"><button class="btn btn-ghost" id="whoamiCancel">Not now</button></div>
   </div>
 </div>
-
-
 
 <!--
   ============================================================
@@ -639,11 +593,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
 <script>
-
 (function(){
   "use strict";
 
-  /* ---------------- helpers ---------------- */
+  /* ---------------- date/time helpers ---------------- */
   function pad2(n){ return String(n).padStart(2,"0"); }
   function isoDate(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
   function parseISODate(s){ if(!s) return null; var p=s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
@@ -657,16 +610,48 @@
     var weekNo = Math.ceil((((dt-yearStart)/86400000)+1)/7);
     return dt.getUTCFullYear()+"-W"+pad2(weekNo);
   }
-  function weekInfo(d){
-    var s=startOfWeek(d), e=endOfWeek(d);
-    var fmt=function(x){ return x.toLocaleDateString(undefined,{month:"short",day:"numeric"}); };
-    return { id:isoWeekId(d), start:s, end:e, label: fmt(s)+" – "+fmt(e) };
-  }
+  function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+  function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+  function startOfYear(d){ return new Date(d.getFullYear(), 0, 1); }
+  function endOfYear(d){ return new Date(d.getFullYear(), 11, 31); }
   function addDays(d,n){ var nd=new Date(d); nd.setDate(nd.getDate()+n); return nd; }
+  function addMonths(d,n){ return new Date(d.getFullYear(), d.getMonth()+n, 1); }
+  function addYears(d,n){ return new Date(d.getFullYear()+n, d.getMonth(), 1); }
   function todayStr(){ return isoDate(new Date()); }
   function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
-  function debounce(fn, ms){ var t; return function(){ var args=arguments, ctx=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,args); }, ms); }; }
   function uid(){ return "local-"+Math.random().toString(36).slice(2)+Date.now().toString(36); }
+
+  function computeRange(mode, refDate){
+    var fmtMD=function(x){ return x.toLocaleDateString(undefined,{month:"short",day:"numeric"}); };
+    if(mode==="month"){
+      var s=startOfMonth(refDate), e=endOfMonth(refDate);
+      return { start:s, end:e, id: refDate.getFullYear()+"-"+pad2(refDate.getMonth()+1), label: refDate.toLocaleDateString(undefined,{month:"long", year:"numeric"}) };
+    }
+    if(mode==="year"){
+      var sy=startOfYear(refDate), ey=endOfYear(refDate);
+      return { start:sy, end:ey, id:String(refDate.getFullYear()), label:String(refDate.getFullYear()) };
+    }
+    var sw=startOfWeek(refDate), ew=endOfWeek(refDate);
+    return { start:sw, end:ew, id:isoWeekId(refDate), label: fmtMD(sw)+" – "+fmtMD(ew) };
+  }
+  function dateInRange(dateStr, range){
+    var d = parseISODate(dateStr);
+    if(!d) return false;
+    return d >= range.start && d <= range.end;
+  }
+  function timeToMinutes(t){ if(!t) return null; var p=String(t).split(":"); if(p.length<2) return null; return (+p[0])*60+(+p[1]); }
+  function meetingDurationHours(m){
+    var s=timeToMinutes(m.time), e=timeToMinutes(m.endTime);
+    if(s==null || e==null) return 0;
+    var diff = e-s;
+    if(diff<0) diff = 0;
+    return diff/60;
+  }
+  function fmtHours(h){
+    if(!h) return "0h";
+    var rounded = Math.round(h*10)/10;
+    return rounded+"h";
+  }
 
   var MEMBER_COLORS = { joe:"#1F6F6B", reem:"#3E6FB0", oreo:"#8A5CB5", amro:"#B8862E", omar:"#B0507E" };
   function memberColor(id){ return MEMBER_COLORS[id] || "#5B6864"; }
@@ -687,7 +672,6 @@
   ]};
 
   function statusClass(s){ return "status-"+String(s||"Not Started").toLowerCase().replace(/\s+/g,""); }
-  function priorityClass(p){ return "priority-"+String(p||"Medium").toLowerCase(); }
   function pstatusClass(s){ return "pstatus-"+String(s||"Active").toLowerCase(); }
 
   var GENERAL_PROJECT = { id:"general", name:"Internal / General", client:"", status:"Active" };
@@ -696,22 +680,22 @@
   var state = {
     view: "dashboard",
     db: null,
-    room: null,
     team: null,
     projects: [],
     tasks: [],
     meetings: [],
-    summaries: {},
     me: localStorage_get("cadence.me"),
-    currentWeek: weekInfo(new Date()),
-    filters: { owner:"all", status:"all", priority:"all", week:"all", mine:false, project:"all", meetingWeek:"all", meetingProject:"all" },
+    rangeMode: "week",
+    refDate: new Date(),
+    currentRange: null,
+    filters: { meetingWeek:"all", meetingClient:"all" },
     peers: []
   };
 
   function localStorage_get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function localStorage_set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 
-  var unsubSummary = null;
+  state.currentRange = computeRange(state.rangeMode, state.refDate);
 
   function teamMembers(){ return (state.team && state.team.members) || DEFAULT_TEAM.members; }
   function memberById(id){ return teamMembers().find(function(m){ return m.id===id; }); }
@@ -722,12 +706,14 @@
   function projectById(id){ return projectsList().find(function(p){ return p.id===id; }) || GENERAL_PROJECT; }
   function projectLabel(id){ return projectById(id).name; }
 
-  function effectiveWeek(task){
-    if(task.deadline){ var d=parseISODate(task.deadline); if(d) return isoWeekId(d); }
-    return task.weekOf || state.currentWeek.id;
-  }
+  function taskOwners(t){ return t.owners || (t.owner ? [t.owner] : []); }
+  function proposalOwners(p){ return p.owners || (p.owner ? [p.owner] : []); }
+
   function isOverdue(task){
     return !!task.deadline && task.deadline < todayStr() && task.status !== "Done";
+  }
+  function isProposalOverdue(p){
+    return !!p.submitBy && p.submitBy < todayStr() && p.status !== "Closed" && p.status !== "Submitted";
   }
 
   /* ---------------- firebase bootstrap ---------------- */
@@ -735,24 +721,23 @@
   var presenceTimer = null;
 
   var SEED_PROJECTS = [
-    { key:"p1", name:"Al Rajhi Takaful — Leadership Development", client:"Al Rajhi Takaful", status:"Active" },
-    { key:"p2", name:"ELM AI Value Accelerator", client:"ELM", status:"Active" },
-    { key:"p3", name:"Durham Faculty Profiles", client:"Durham University Business School", status:"Submitted" }
+    { key:"p1", name:"Al Rajhi Takaful — Leadership Development", client:"Al Rajhi Takaful", bd:"", language:"English", country:"Saudi Arabia", submitBy:"", owners:["reem"], status:"Active" },
+    { key:"p2", name:"ELM AI Value Accelerator", client:"ELM", bd:"", language:"English", country:"Saudi Arabia", submitBy:"", owners:["omar"], status:"Active" },
+    { key:"p3", name:"Durham Faculty Profiles", client:"Durham University Business School", bd:"", language:"English", country:"United Kingdom", submitBy:"", owners:["amro"], status:"Submitted" }
   ];
 
   function seedLocalDemo(){
     state.team = JSON.parse(JSON.stringify(DEFAULT_TEAM));
     var today = new Date();
-    state.projects = SEED_PROJECTS.map(function(p){ return { id: p.key, name:p.name, client:p.client, status:p.status, example:true }; });
+    state.projects = SEED_PROJECTS.map(function(p){ return Object.assign({}, p, { id:p.key, example:true }); });
     state.tasks = [
-      { id: uid(), title:"Example — Review proposal deck", project:"p1", owner:"reem", priority:"High", status:"In Progress", deadline:isoDate(addDays(today,2)), weekOf:state.currentWeek.id, notes:"Sample task — edit or delete me.", example:true },
-      { id: uid(), title:"Example — Send faculty bios to contact", project:"p3", owner:"amro", priority:"Medium", status:"Not Started", deadline:isoDate(addDays(today,-1)), weekOf:state.currentWeek.id, notes:"Overdue example, shown in red.", example:true },
-      { id: uid(), title:"Example — Finalize methodology slide", project:"p2", owner:"omar", priority:"Low", status:"Done", deadline:isoDate(addDays(today,-3)), weekOf:state.currentWeek.id, notes:"", example:true }
+      { id: uid(), title:"Example — Review proposal deck", project:"p1", owners:["reem"], status:"In Progress", deadline:isoDate(addDays(today,2)), notes:"Sample task — edit or delete me.", example:true },
+      { id: uid(), title:"Example — Send faculty bios to contact", project:"p3", owners:["amro"], status:"Not Started", deadline:isoDate(addDays(today,-1)), notes:"Overdue example, shown in red.", example:true },
+      { id: uid(), title:"Example — Finalize methodology slide", project:"p2", owners:["omar"], status:"Done", deadline:isoDate(addDays(today,-3)), notes:"", example:true }
     ];
     state.meetings = [
-      { id: uid(), title:"Example — Weekly sync", project:"general", date:isoDate(today), time:"10:00", attendees:["joe","reem","oreo","amro","omar"], agenda:"Review pipeline, blockers, and this week's deadlines.", actionItems:[{text:"Confirm proposal timelines", done:false}], example:true }
+      { id: uid(), title:"Example — Weekly sync", client:"", date:isoDate(today), time:"10:00", endTime:"11:00", attendees:["joe","reem","oreo","amro","omar"], notes:"- Review pipeline\n- Blockers\n- This week's deadlines", actionItems:[{text:"Confirm proposal timelines", done:false}], example:true }
     ];
-    state.summaries[state.currentWeek.id] = { wins:"", blockers:"" };
   }
 
   function ensureSeedExamples(){
@@ -763,29 +748,20 @@
       return initRef.set({ seeded:true, at: Date.now() }).then(function(){
         var pc = state.db.collection("projects");
         return Promise.all(SEED_PROJECTS.map(function(p){
-          return pc.doc(p.key).set({ name:p.name, client:p.client, status:p.status, example:true, createdAt:Date.now() });
+          return pc.doc(p.key).set({ name:p.name, client:p.client, bd:p.bd, language:p.language, country:p.country, submitBy:p.submitBy, owners:p.owners, status:p.status, example:true, createdAt:Date.now() });
         }));
       }).then(function(){
         var today = new Date();
         var tc = state.db.collection("tasks");
         var mc = state.db.collection("meetings");
         return Promise.all([
-          tc.add({ title:"Example — Review proposal deck", project:"p1", owner:"reem", priority:"High", status:"In Progress", deadline:isoDate(addDays(today,2)), weekOf:state.currentWeek.id, notes:"Sample task — edit or delete me.", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
-          tc.add({ title:"Example — Send faculty bios to contact", project:"p3", owner:"amro", priority:"Medium", status:"Not Started", deadline:isoDate(addDays(today,-1)), weekOf:state.currentWeek.id, notes:"Overdue example, shown in red.", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
-          tc.add({ title:"Example — Finalize methodology slide", project:"p2", owner:"omar", priority:"Low", status:"Done", deadline:isoDate(addDays(today,-3)), weekOf:state.currentWeek.id, notes:"", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
-          mc.add({ title:"Example — Weekly sync", project:"general", date:isoDate(today), time:"10:00", attendees:["joe","reem","oreo","amro","omar"], agenda:"Review pipeline, blockers, and this week's deadlines.", actionItems:[{text:"Confirm proposal timelines", done:false}], example:true, createdBy:"system", createdAt:Date.now() })
+          tc.add({ title:"Example — Review proposal deck", project:"p1", owners:["reem"], status:"In Progress", deadline:isoDate(addDays(today,2)), notes:"Sample task — edit or delete me.", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
+          tc.add({ title:"Example — Send faculty bios to contact", project:"p3", owners:["amro"], status:"Not Started", deadline:isoDate(addDays(today,-1)), notes:"Overdue example, shown in red.", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
+          tc.add({ title:"Example — Finalize methodology slide", project:"p2", owners:["omar"], status:"Done", deadline:isoDate(addDays(today,-3)), notes:"", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
+          mc.add({ title:"Example — Weekly sync", client:"", date:isoDate(today), time:"10:00", endTime:"11:00", attendees:["joe","reem","oreo","amro","omar"], notes:"- Review pipeline\n- Blockers\n- This week's deadlines", actionItems:[{text:"Confirm proposal timelines", done:false}], example:true, createdBy:"system", createdAt:Date.now() })
         ]);
       });
     }).catch(function(e){ console.warn("seed skipped", e); });
-  }
-
-  function subscribeSummary(weekId){
-    if(unsubSummary){ unsubSummary(); unsubSummary=null; }
-    if(!state.db){ renderSummary(); return; }
-    unsubSummary = state.db.doc("summaries/"+weekId).onSnapshot(function(snap){
-      state.summaries[weekId] = snap.exists ? snap.data() : { wins:"", blockers:"" };
-      if(state.currentWeek.id===weekId) renderSummary();
-    }, function(){ });
   }
 
   function showSetupBanner(){
@@ -845,7 +821,6 @@
       renderPresence();
     }, function(e){ console.warn("presence error", e); });
 
-    subscribeSummary(state.currentWeek.id);
     ensureSeedExamples();
     if(state.me) startPresenceHeartbeat();
     renderWhoami();
@@ -867,29 +842,26 @@
     presenceTimer = setInterval(pushPresence, 20000);
   }
 
-  /* ---------------- rendering ---------------- */
+  /* ---------------- rendering: shell ---------------- */
   function renderAll(){
     renderNavCounts();
-    renderWeekNav();
+    renderRangeNav();
     renderTeam();
-    renderProjects();
     renderWhoamiOwnerLists();
     renderDashboard();
-    renderTasks();
+    renderProjects();
     renderMeetings();
     renderWhoami();
   }
 
   function renderNavCounts(){
-    document.getElementById("navCountTasks").textContent = state.tasks.filter(function(t){ return t.status!=="Done"; }).length;
     document.getElementById("navCountMeetings").textContent = state.meetings.length;
     document.getElementById("navCountProjects").textContent = activeProjectsList().length;
   }
 
-  function renderWeekNav(){
-    document.getElementById("weekRange").textContent = state.currentWeek.label;
-    document.getElementById("weekIdLabel").textContent = state.currentWeek.id;
-    document.getElementById("summaryWeekLabel").textContent = state.currentWeek.id + " · " + state.currentWeek.label;
+  function renderRangeNav(){
+    document.getElementById("weekRange").textContent = state.currentRange.label;
+    document.getElementById("weekIdLabel").textContent = state.currentRange.id;
   }
 
   function renderPresence(){
@@ -910,92 +882,339 @@
     document.getElementById("whoamiName").textContent = m ? m.name : "Set your name";
   }
 
-  function renderWhoamiOwnerLists(){
-    var members = teamMembers();
-    ["filterOwner","newTaskOwner"].forEach(function(selId){
-      var sel = document.getElementById(selId);
-      var current = sel.value;
-      var base = selId==="filterOwner" ? '<option value="all">All owners</option>' : "";
-      sel.innerHTML = base + members.map(function(m){ return '<option value="'+m.id+'">'+escapeHtml(m.name)+"</option>"; }).join("");
-      if(current && sel.querySelector('option[value="'+current+'"]')) sel.value = current;
-      else if(selId==="newTaskOwner" && state.me) sel.value = state.me;
-    });
-    var att = document.getElementById("newMeetingAttendees");
-    att.innerHTML = '<span class="muted" style="font-size:11.5px; align-self:center;">Attendees:</span>' + members.map(function(m){
-      return '<label class="toggle-chip attendee-chip" data-id="'+m.id+'" style="cursor:pointer;">'+escapeHtml(m.name)+"</label>";
+  /* ---------------- owner picker (multi-select chips) ---------------- */
+  function ownerChipsHtml(selectedIds){
+    selectedIds = selectedIds || [];
+    return teamMembers().map(function(m){
+      var on = selectedIds.indexOf(m.id) > -1;
+      return '<button type="button" class="mini-chip'+(on?" on":"")+'" data-id="'+m.id+'" '+
+        (on ? ('style="background:'+memberColor(m.id)+';border-color:'+memberColor(m.id)+';"') : "") +
+        ' title="'+escapeHtml(m.name)+'">'+escapeHtml(initials(m.name))+"</button>";
     }).join("");
-    att.querySelectorAll(".attendee-chip").forEach(function(chip){
-      chip.classList.add("on");
-      chip.addEventListener("click", function(){ chip.classList.toggle("on"); });
-    });
-
-    var projects = projectsList();
-    ["filterProject","newTaskProject","filterMeetingProject","newMeetingProject"].forEach(function(selId){
-      var sel = document.getElementById(selId);
-      var current = sel.value;
-      var base = (selId==="filterProject" || selId==="filterMeetingProject") ? '<option value="all">All proposals</option>' : "";
-      sel.innerHTML = base + projects.map(function(p){ return '<option value="'+p.id+'">'+escapeHtml(p.name)+"</option>"; }).join("");
-      if(current && sel.querySelector('option[value="'+current+'"]')) sel.value = current;
-    });
   }
-
-  function renderTeam(){
-    var grid = document.getElementById("teamGrid");
-    grid.innerHTML = teamMembers().map(function(m){
-      return '<div class="card team-card">' +
-        (state.me===m.id ? '<span class="team-you-badge">This is you</span>' : "") +
-        '<div class="team-avatar" style="background:'+memberColor(m.id)+'">'+escapeHtml(initials(m.name))+"</div>" +
-        '<div class="team-role">'+escapeHtml(m.role)+"</div>" +
-        '<input class="team-name-input" data-id="'+m.id+'" value="'+escapeHtml(m.name)+'">' +
-        "</div>";
-    }).join("");
-    grid.querySelectorAll(".team-name-input").forEach(function(input){
-      input.addEventListener("change", function(){
-        updateMemberName(input.dataset.id, input.value.trim() || memberName(input.dataset.id));
+  function wireOwnerPickerToggle(container, onChange){
+    container.querySelectorAll(".mini-chip").forEach(function(chip){
+      chip.addEventListener("click", function(){
+        var sel = JSON.parse(container.dataset.selected || "[]");
+        var idx = sel.indexOf(chip.dataset.id);
+        if(idx>-1) sel.splice(idx,1); else sel.push(chip.dataset.id);
+        container.dataset.selected = JSON.stringify(sel);
+        container.innerHTML = ownerChipsHtml(sel);
+        wireOwnerPickerToggle(container, onChange);
+        if(onChange) onChange(sel);
       });
     });
   }
 
-  function updateMemberName(id, name){
-    var members = teamMembers().map(function(m){ return m.id===id ? Object.assign({}, m, {name:name}) : m; });
-    state.team = { members: members };
-    if(state.db){ state.db.doc("team/members").set(state.team).catch(function(){}); }
-    else { renderAll(); }
-    if(state.me===id) pushPresence();
+  var pendingNewTaskOwners = {};
+
+  function renderWhoamiOwnerLists(){
+    var members = teamMembers();
+
+    var att = document.getElementById("newMeetingAttendees");
+    var attSelected = att.dataset.selected ? JSON.parse(att.dataset.selected) : members.map(function(m){ return m.id; });
+    att.innerHTML = '<span class="muted" style="font-size:11.5px; align-self:center;">Attendees:</span>' + members.map(function(m){
+      var on = attSelected.indexOf(m.id)>-1;
+      return '<label class="toggle-chip attendee-chip'+(on?" on":"")+'" data-id="'+m.id+'" style="cursor:pointer;">'+escapeHtml(m.name)+"</label>";
+    }).join("");
+    att.dataset.selected = JSON.stringify(attSelected);
+    att.querySelectorAll(".attendee-chip").forEach(function(chip){
+      chip.addEventListener("click", function(){
+        chip.classList.toggle("on");
+        var sel = JSON.parse(att.dataset.selected || "[]");
+        var id = chip.dataset.id, idx = sel.indexOf(id);
+        if(chip.classList.contains("on")){ if(idx===-1) sel.push(id); }
+        else { if(idx>-1) sel.splice(idx,1); }
+        att.dataset.selected = JSON.stringify(sel);
+      });
+    });
+
+    var npOwners = document.getElementById("newProjectOwners");
+    var npSelected = npOwners.dataset.selected ? JSON.parse(npOwners.dataset.selected) : (state.me ? [state.me] : []);
+    npOwners.dataset.selected = JSON.stringify(npSelected);
+    npOwners.innerHTML = ownerChipsHtml(npSelected);
+    wireOwnerPickerToggle(npOwners);
+
+    var clientList = document.getElementById("clientSuggestions");
+    var clients = Array.from(new Set(state.projects.map(function(p){ return p.client; }).filter(Boolean)));
+    clientList.innerHTML = clients.map(function(c){ return '<option value="'+escapeHtml(c)+'">'; }).join("");
   }
 
-  /* ---- projects / proposals ---- */
+  /* ---------------- dashboard ---------------- */
+  function renderDashboard(){
+    var range = state.currentRange;
+    var rangeTasks = state.tasks.filter(function(t){ return t.deadline && dateInRange(t.deadline, range); });
+    var done = rangeTasks.filter(function(t){ return t.status==="Done"; });
+    var overdue = state.tasks.filter(isOverdue);
+    var rangeMeetings = state.meetings.filter(function(m){ return dateInRange(m.date, range); });
+    var totalHours = rangeMeetings.reduce(function(sum,m){ return sum+meetingDurationHours(m); }, 0);
+    var rangeWord = state.rangeMode==="week" ? "this week" : state.rangeMode==="month" ? "this month" : "this year";
+
+    document.getElementById("statTotal").textContent = rangeTasks.length;
+    document.getElementById("statTotalSub").textContent = rangeTasks.length ? (rangeTasks.length-done.length)+" remaining "+rangeWord : "No tasks due "+rangeWord;
+    document.getElementById("statDone").textContent = done.length;
+    document.getElementById("statDoneSub").textContent = rangeTasks.length ? Math.round(100*done.length/rangeTasks.length)+"% of "+rangeWord : " ";
+    document.getElementById("statOverdue").textContent = overdue.length;
+    document.getElementById("statOverdueSub").textContent = overdue.length ? "across all proposals" : "nothing overdue";
+    document.getElementById("statMeetings").textContent = rangeMeetings.length;
+    document.getElementById("statMeetingsSub").textContent = rangeMeetings.length ? fmtHours(totalHours)+" total "+rangeWord : "none scheduled";
+
+    var deadlineItems = [];
+    state.projects.forEach(function(p){
+      if(p.status!=="Closed" && p.submitBy){
+        deadlineItems.push({ kind:"proposal", label:"Submit: "+p.name, date:p.submitBy, overdue:isProposalOverdue(p) });
+      }
+    });
+    state.tasks.forEach(function(t){
+      if(t.status!=="Done" && t.deadline){
+        deadlineItems.push({ kind:"task", label:t.title+" — "+projectLabel(t.project), date:t.deadline, overdue:isOverdue(t) });
+      }
+    });
+    deadlineItems.sort(function(a,b){ return a.date<b.date?-1:(a.date>b.date?1:0); });
+    deadlineItems = deadlineItems.slice(0,8);
+    var upEl = document.getElementById("upcomingList");
+    upEl.innerHTML = deadlineItems.length ? deadlineItems.map(function(it){
+      return '<div class="mini-row">' +
+        '<span class="pill '+(it.kind==="proposal"?"pstatus-active":"status-inprogress")+'">'+(it.kind==="proposal"?"Submission":"Task")+"</span>" +
+        '<span class="mini-title">'+escapeHtml(it.label)+"</span>" +
+        '<span class="mono" style="font-size:11.5px; color:'+(it.overdue?"var(--red)":"var(--text-faint)")+'">'+it.date+(it.overdue?" · overdue":"")+"</span>" +
+      "</div>";
+    }).join("") : '<div class="mini-empty">Nothing on deck.</div>';
+
+    var pipEl = document.getElementById("pipelineList");
+    var active = activeProjectsList();
+    document.getElementById("pipelineCount").textContent = active.length ? active.length+" active" : "";
+    pipEl.innerHTML = active.length ? active.map(function(p){
+      var pTasks = state.tasks.filter(function(t){ return t.project===p.id; });
+      var open = pTasks.filter(function(t){ return t.status!=="Done"; });
+      var pOverdue = isProposalOverdue(p);
+      return '<div class="mini-row">' +
+        '<span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span>" +
+        '<span class="mini-title">'+escapeHtml(p.name)+(p.client?' <span class="muted" style="font-weight:400;">· '+escapeHtml(p.client)+"</span>":"")+"</span>" +
+        '<span class="mono" style="font-size:11px; color:'+(pOverdue?"var(--red)":"var(--text-faint)")+'">'+open.length+" open"+(p.submitBy?" · submit "+p.submitBy:"")+(pOverdue?" · overdue":"")+"</span>" +
+      "</div>";
+    }).join("") : '<div class="mini-empty">No active proposals yet — add one from the Proposals tab.</div>';
+
+    var dmEl = document.getElementById("dashMeetingsList");
+    var sortedRangeMeetings = rangeMeetings.slice().sort(function(a,b){ return (a.date+a.time) < (b.date+b.time) ? -1 : 1; });
+    dmEl.innerHTML = sortedRangeMeetings.length ? sortedRangeMeetings.map(function(m){
+      var dur = meetingDurationHours(m);
+      return '<div class="mini-row">' +
+        '<span class="mono" style="font-size:11.5px; color:var(--text-faint); width:90px;">'+m.date.slice(5)+" "+m.time+"</span>" +
+        '<span class="mini-title">'+escapeHtml(m.title)+"</span>" +
+        (dur ? '<span class="mono" style="font-size:11px; color:var(--text-faint);">'+fmtHours(dur)+"</span>" : "") +
+      "</div>";
+    }).join("") : '<div class="mini-empty">No meetings logged for this range yet.</div>';
+
+    renderPersonSnapshot(range, rangeMeetings);
+  }
+
+  function renderPersonSnapshot(range, rangeMeetings){
+    document.getElementById("personSnapshotLabel").textContent = state.currentRange.label;
+    var grid = document.getElementById("personGrid");
+    grid.innerHTML = teamMembers().map(function(m){
+      var items = [];
+      state.projects.forEach(function(p){
+        if(p.status!=="Closed" && proposalOwners(p).indexOf(m.id)>-1){
+          items.push({ label:"Submit: "+p.name, date:p.submitBy, overdue:isProposalOverdue(p) });
+        }
+      });
+      state.tasks.forEach(function(t){
+        if(t.status!=="Done" && taskOwners(t).indexOf(m.id)>-1){
+          items.push({ label:t.title, date:t.deadline, overdue:isOverdue(t) });
+        }
+      });
+      items.sort(function(a,b){ var da=a.date||"9999", db_=b.date||"9999"; return da<db_?-1:(da>db_?1:0); });
+      var shown = items.slice(0,4);
+      var extra = items.length - shown.length;
+
+      var theirMeetings = rangeMeetings.filter(function(mt){ return (mt.attendees||[]).indexOf(m.id)>-1; });
+      var hours = theirMeetings.reduce(function(sum,mt){ return sum+meetingDurationHours(mt); },0);
+
+      return '<div class="person-card">' +
+        '<div class="person-card-head">' +
+          '<span class="team-avatar" style="width:30px;height:30px;font-size:12px;border-radius:9px;background:'+memberColor(m.id)+';">'+escapeHtml(initials(m.name))+"</span>" +
+          '<span><span class="person-card-name" style="display:block;">'+escapeHtml(m.name)+'</span><span class="person-card-role">'+escapeHtml(m.role)+"</span></span>" +
+        "</div>" +
+        '<div class="person-items">' +
+          (shown.length ? shown.map(function(it){
+            return '<div class="person-item'+(it.overdue?" overdue":"")+'">'+escapeHtml(it.label)+(it.date?" · "+it.date:"")+"</div>";
+          }).join("") + (extra>0 ? '<div class="person-item muted">+'+extra+" more</div>" : "") : '<div class="person-empty">Nothing open right now</div>') +
+        "</div>" +
+        '<div class="person-foot">'+theirMeetings.length+" meeting"+(theirMeetings.length===1?"":"s")+" · "+fmtHours(hours)+" · "+state.currentRange.label+"</div>" +
+      "</div>";
+    }).join("");
+  }
+
+  /* ---------------- proposals (merged with tasks) ---------------- */
   function renderProjects(){
     var listEl = document.getElementById("projectsList");
     document.getElementById("projectsEmpty").hidden = state.projects.length>0;
-    var sorted = state.projects.slice().sort(function(a,b){ return a.status==="Closed" && b.status!=="Closed" ? 1 : (b.status==="Closed" && a.status!=="Closed" ? -1 : 0); });
-    listEl.innerHTML = sorted.map(function(p){
-      var openTasks = state.tasks.filter(function(t){ return t.project===p.id && t.status!=="Done"; }).length;
-      return '<div class="project-card" data-id="'+p.id+'" style="border-top:1px solid var(--border);">' +
-        '<input class="project-name-input" data-field="name" value="'+escapeHtml(p.name)+'" style="flex:1 1 240px;">' +
-        '<div class="project-card-client"><input data-field="client" value="'+escapeHtml(p.client||"")+'" placeholder="Client"></div>' +
+
+    var real = state.projects.slice().sort(function(a,b){
+      if(a.status==="Closed" && b.status!=="Closed") return 1;
+      if(b.status==="Closed" && a.status!=="Closed") return -1;
+      var da = a.submitBy || "9999-99-99", db_ = b.submitBy || "9999-99-99";
+      return da<db_?-1:(da>db_?1:0);
+    });
+    var ordered = [GENERAL_PROJECT].concat(real);
+
+    listEl.innerHTML = ordered.map(function(p){ return renderProposalCardHtml(p); }).join("");
+    listEl.querySelectorAll(".proposal-card").forEach(function(card){ wireProposalCard(card); });
+  }
+
+  function renderProposalCardHtml(p){
+    var isGeneral = p.id === "general";
+    var pTasks = state.tasks.filter(function(t){ return (t.project||"general")===p.id; })
+      .sort(function(a,b){ var da=a.deadline||"9999", db_=b.deadline||"9999"; return da<db_?-1:(da>db_?1:0); });
+    var openCount = pTasks.filter(function(t){ return t.status!=="Done"; }).length;
+
+    var head = '<div class="proposal-top">' +
+      (isGeneral
+        ? '<div class="project-name-input" style="flex:1 1 240px; font-weight:800; padding:6px 9px; background:transparent; border-color:transparent;">Internal / General</div>'
+        : '<input class="project-name-input" data-field="name" value="'+escapeHtml(p.name)+'">') +
+      (isGeneral ? "" :
         '<select class="pill-select '+pstatusClass(p.status)+'" data-field="status">' +
           ["Active","Submitted","Closed"].map(function(s){ return '<option value="'+s+'" '+(s===p.status?"selected":"")+">"+s+"</option>"; }).join("") +
+        "</select>"
+      ) +
+      '<span class="muted mono" style="font-size:11px; white-space:nowrap;">'+openCount+" open</span>" +
+      (isGeneral ? "" : '<button class="icon-btn" data-action="delete-project" title="Delete proposal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>') +
+    "</div>";
+
+    var meta = isGeneral ? "" : (
+      '<div class="proposal-meta-grid">' +
+        '<input data-field="client" placeholder="Client *" value="'+escapeHtml(p.client||"")+'">' +
+        '<input data-field="bd" placeholder="BD" value="'+escapeHtml(p.bd||"")+'">' +
+        '<input data-field="language" placeholder="Language" value="'+escapeHtml(p.language||"")+'">' +
+        '<input data-field="country" placeholder="Country" value="'+escapeHtml(p.country||"")+'">' +
+        '<label class="submit-by">Submit by <input type="date" data-field="submitBy" value="'+(p.submitBy||"")+'"></label>' +
+      "</div>"
+    );
+
+    var ownersRow = isGeneral ? "" : (
+      '<div class="proposal-owners-row">' +
+        '<span class="muted" style="font-size:11.5px;">Owners:</span>' +
+        '<div class="owner-picker" data-role="proposal-owners">'+ownerChipsHtml(proposalOwners(p))+"</div>" +
+      "</div>"
+    );
+
+    var taskRows = pTasks.length ? pTasks.map(function(t){
+      var overdue = isOverdue(t);
+      var extraStyle = (overdue ? "box-shadow:inset 3px 0 0 var(--red);" : "") + (t.status==="Done" ? "opacity:.6;" : "");
+      return '<div class="proposal-task-row" data-id="'+t.id+'" style="'+extraStyle+'">' +
+        '<div class="task-title-text" contenteditable="true" data-field="title">'+escapeHtml(t.title)+"</div>" +
+        '<div class="owner-picker" data-role="task-owners">'+ownerChipsHtml(taskOwners(t))+"</div>" +
+        '<input type="date" class="deadline-input" data-field="deadline" value="'+(t.deadline||"")+'">' +
+        '<select class="pill-select '+statusClass(t.status)+'" data-field="status">' +
+          ["Not Started","In Progress","Blocked","Done"].map(function(s){ return '<option value="'+s+'" '+(s===t.status?"selected":"")+">"+s+"</option>"; }).join("") +
         "</select>" +
-        '<span class="muted mono" style="font-size:11.5px; white-space:nowrap;">'+openTasks+" open task"+(openTasks===1?"":"s")+"</span>" +
-        '<button class="icon-btn" data-action="delete-project" title="Delete proposal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>' +
+        '<button class="icon-btn" data-action="delete-task" title="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>' +
       "</div>";
-    }).join("");
-    listEl.querySelectorAll(".project-card").forEach(function(card){
-      var id = card.dataset.id;
-      card.querySelectorAll("[data-field]").forEach(function(el){
+    }).join("") : '<div class="proposal-tasks-empty">No extra tasks yet.</div>';
+
+    var addTaskRow = '<div class="add-task-row" data-pid="'+p.id+'">' +
+        '<input type="text" placeholder="Add a task…" data-role="new-task-title">' +
+        '<div class="owner-picker" data-role="new-task-owners">'+ownerChipsHtml(pendingNewTaskOwners[p.id] || (state.me?[state.me]:[]))+"</div>" +
+        '<input type="date" data-role="new-task-deadline">' +
+        '<button type="button" class="btn" data-role="add-task-btn">Add</button>' +
+      "</div>";
+
+    return '<div class="proposal-card" data-id="'+p.id+'">' + head + meta + ownersRow +
+      '<div class="proposal-tasks">' + taskRows + addTaskRow + "</div>" +
+    "</div>";
+  }
+
+  function wireProposalCard(card){
+    var pid = card.dataset.id;
+    var isGeneral = pid === "general";
+
+    if(!isGeneral){
+      card.querySelectorAll(".proposal-top [data-field], .proposal-meta-grid [data-field]").forEach(function(el){
         var field = el.dataset.field;
-        var evt = el.tagName==="SELECT" ? "change" : "blur";
+        var evt = (el.tagName==="SELECT" || el.type==="date") ? "change" : "blur";
         el.addEventListener(evt, function(){
-          if(field==="status") el.className = "pill-select " + pstatusClass(el.value);
-          updateProject(id, (function(){ var o={}; o[field]=el.value; return o; })());
+          var val = el.tagName==="DIV" ? el.textContent.trim() : el.value;
+          if(field==="status") el.className = "pill-select "+pstatusClass(val);
+          var patch = {}; patch[field]=val;
+          updateProject(pid, patch);
         });
       });
-      card.querySelector('[data-action="delete-project"]').addEventListener("click", function(){ deleteProject(id); });
+      var delBtn = card.querySelector('[data-action="delete-project"]');
+      if(delBtn) delBtn.addEventListener("click", function(){
+        if(confirm("Delete this proposal? Its tasks will move to Internal / General.")) deleteProject(pid);
+      });
+      var ownersPicker = card.querySelector('.proposal-owners-row .owner-picker[data-role="proposal-owners"]');
+      if(ownersPicker){
+        ownersPicker.querySelectorAll(".mini-chip").forEach(function(chip){
+          chip.addEventListener("click", function(){
+            var p = state.projects.find(function(x){ return x.id===pid; }); if(!p) return;
+            var owners = proposalOwners(p).slice();
+            var idx = owners.indexOf(chip.dataset.id);
+            if(idx>-1) owners.splice(idx,1); else owners.push(chip.dataset.id);
+            updateProject(pid, { owners: owners });
+          });
+        });
+      }
+    }
+
+    card.querySelectorAll(".proposal-task-row").forEach(function(row){
+      var tid = row.dataset.id;
+      row.querySelectorAll("[data-field]").forEach(function(el){
+        var field = el.dataset.field;
+        var evt = (el.tagName==="SELECT" || el.type==="date") ? "change" : "blur";
+        el.addEventListener(evt, function(){
+          var val = el.tagName==="DIV" ? el.textContent.trim() : el.value;
+          if(field==="status") el.className = "pill-select "+statusClass(val);
+          var patch = {}; patch[field]=val;
+          updateTask(tid, patch);
+        });
+      });
+      var ownerPicker = row.querySelector('.owner-picker[data-role="task-owners"]');
+      if(ownerPicker){
+        ownerPicker.querySelectorAll(".mini-chip").forEach(function(chip){
+          chip.addEventListener("click", function(){
+            var t = state.tasks.find(function(x){ return x.id===tid; }); if(!t) return;
+            var owners = taskOwners(t).slice();
+            var idx = owners.indexOf(chip.dataset.id);
+            if(idx>-1) owners.splice(idx,1); else owners.push(chip.dataset.id);
+            updateTask(tid, { owners: owners });
+          });
+        });
+      }
+      var delTaskBtn = row.querySelector('[data-action="delete-task"]');
+      if(delTaskBtn) delTaskBtn.addEventListener("click", function(){ deleteTask(tid); });
     });
+
+    var addRow = card.querySelector(".add-task-row");
+    if(addRow){
+      var ownerPickerNew = addRow.querySelector('.owner-picker[data-role="new-task-owners"]');
+      ownerPickerNew.dataset.selected = JSON.stringify(pendingNewTaskOwners[pid] || (state.me?[state.me]:[]));
+      wireOwnerPickerToggle(ownerPickerNew, function(sel){ pendingNewTaskOwners[pid] = sel; });
+
+      var titleInput = addRow.querySelector('[data-role="new-task-title"]');
+      var deadlineInput = addRow.querySelector('[data-role="new-task-deadline"]');
+      var addBtn = addRow.querySelector('[data-role="add-task-btn"]');
+      function submitNewTask(){
+        var title = titleInput.value.trim();
+        if(!title) return;
+        addTask({
+          title: title,
+          project: pid,
+          owners: pendingNewTaskOwners[pid] || (state.me?[state.me]:[]),
+          deadline: deadlineInput.value || ""
+        });
+        titleInput.value = "";
+        deadlineInput.value = "";
+        delete pendingNewTaskOwners[pid];
+      }
+      addBtn.addEventListener("click", submitNewTask);
+      titleInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); submitNewTask(); } });
+    }
   }
+
   function addProject(data){
-    var payload = Object.assign({ status:"Active", client:"", example:false, createdAt:Date.now() }, data);
+    var payload = Object.assign({ status:"Active", client:"", bd:"", language:"", country:"", submitBy:"", owners:[], example:false, createdAt:Date.now() }, data);
     if(state.db){ state.db.collection("projects").add(payload).catch(function(e){ console.warn(e); }); }
     else { payload.id = uid(); state.projects.push(payload); renderAll(); }
   }
@@ -1004,168 +1223,18 @@
     else { var p=state.projects.find(function(x){ return x.id===id; }); if(p) Object.assign(p, patch); renderAll(); }
   }
   function deleteProject(id){
+    state.tasks.filter(function(t){ return t.project===id; }).forEach(function(t){ updateTask(t.id, { project:"general" }); });
     if(state.db){ state.db.collection("projects").doc(id).delete().catch(function(e){ console.warn(e); }); }
     else { state.projects = state.projects.filter(function(p){ return p.id!==id; }); renderAll(); }
-  }
-
-  /* ---- dashboard ---- */
-  function renderDashboard(){
-    var wk = state.currentWeek;
-    var weekTasks = state.tasks.filter(function(t){ return effectiveWeek(t)===wk.id; });
-    var done = weekTasks.filter(function(t){ return t.status==="Done"; });
-    var overdue = state.tasks.filter(isOverdue);
-    var weekMeetings = state.meetings.filter(function(m){ return isoWeekId(parseISODate(m.date))===wk.id; });
-
-    document.getElementById("statTotal").textContent = weekTasks.length;
-    document.getElementById("statTotalSub").textContent = weekTasks.length ? (weekTasks.length - done.length) + " remaining" : "No tasks yet";
-    document.getElementById("statDone").textContent = done.length;
-    document.getElementById("statDoneSub").textContent = weekTasks.length ? Math.round(100*done.length/weekTasks.length)+"% of the week" : " ";
-    document.getElementById("statOverdue").textContent = overdue.length;
-    document.getElementById("statOverdueSub").textContent = overdue.length ? "across all weeks" : "nothing overdue";
-    document.getElementById("statMeetings").textContent = weekMeetings.length;
-    document.getElementById("statMeetingsSub").textContent = weekMeetings.length ? "this week" : "none scheduled";
-
-    var upcoming = state.tasks.filter(function(t){ return t.status!=="Done" && t.deadline; })
-      .sort(function(a,b){ return a.deadline < b.deadline ? -1 : 1; }).slice(0,6);
-    var upEl = document.getElementById("upcomingList");
-    upEl.innerHTML = upcoming.length ? upcoming.map(function(t){
-      var overdueFlag = isOverdue(t);
-      return '<div class="mini-row">' +
-        '<span class="pill '+priorityClass(t.priority)+'"><span class="pill-dot" style="background:currentColor"></span>'+t.priority+"</span>" +
-        '<span class="mini-title">'+escapeHtml(t.title)+" <span class=\"muted\" style=\"font-weight:400;\">— "+escapeHtml(projectLabel(t.project))+"</span></span>" +
-        '<span class="mono" style="font-size:11.5px; color:'+(overdueFlag?"var(--red)":"var(--text-faint)")+'">'+t.deadline+(overdueFlag?" · overdue":"")+"</span>" +
-        "</div>";
-    }).join("") : '<div class="mini-empty">Nothing on deck. Add a task with a deadline to see it here.</div>';
-
-    var pipEl = document.getElementById("pipelineList");
-    var active = activeProjectsList();
-    document.getElementById("pipelineCount").textContent = active.length ? active.length+" active" : "";
-    pipEl.innerHTML = active.length ? active.map(function(p){
-      var pTasks = state.tasks.filter(function(t){ return t.project===p.id; });
-      var open = pTasks.filter(function(t){ return t.status!=="Done"; });
-      var pOverdue = pTasks.filter(isOverdue);
-      var nextDeadline = open.filter(function(t){ return t.deadline; }).sort(function(a,b){ return a.deadline<b.deadline?-1:1; })[0];
-      return '<div class="mini-row">' +
-        '<span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span>" +
-        '<span class="mini-title">'+escapeHtml(p.name)+(p.client?' <span class="muted" style="font-weight:400;">· '+escapeHtml(p.client)+"</span>":"")+"</span>" +
-        '<span class="mono" style="font-size:11.5px; color:'+(pOverdue.length?"var(--red)":"var(--text-faint)")+'">'+open.length+" open"+(pOverdue.length?" · "+pOverdue.length+" overdue":"")+(nextDeadline?" · next "+nextDeadline.deadline:"")+"</span>" +
-        "</div>";
-    }).join("") : '<div class="mini-empty">No active proposals yet — add one from the Proposals tab.</div>';
-
-    var dmEl = document.getElementById("dashMeetingsList");
-    var sortedWeekMeetings = weekMeetings.slice().sort(function(a,b){ return (a.date+a.time) < (b.date+b.time) ? -1 : 1; });
-    dmEl.innerHTML = sortedWeekMeetings.length ? sortedWeekMeetings.map(function(m){
-      return '<div class="mini-row">' +
-        '<span class="mono" style="font-size:11.5px; color:var(--text-faint); width:80px;">'+m.date.slice(5)+" "+m.time+"</span>" +
-        '<span class="mini-title">'+escapeHtml(m.title)+"</span>" +
-        "</div>";
-    }).join("") : '<div class="mini-empty">No meetings logged for this week yet.</div>';
-
-    renderSummary();
-  }
-
-  function renderSummary(){
-    var s = state.summaries[state.currentWeek.id] || { wins:"", blockers:"" };
-    var winsEl = document.getElementById("winsInput"), blockersEl = document.getElementById("blockersInput");
-    if(document.activeElement !== winsEl) winsEl.value = s.wins || "";
-    if(document.activeElement !== blockersEl) blockersEl.value = s.blockers || "";
-  }
-
-  var saveSummary = debounce(function(field, value){
-    var weekId = state.currentWeek.id;
-    var current = state.summaries[weekId] || { wins:"", blockers:"" };
-    var updated = Object.assign({}, current);
-    updated[field] = value;
-    updated.updatedBy = state.me || null;
-    updated.updatedAt = Date.now();
-    state.summaries[weekId] = updated;
-    var savedEl = document.getElementById(field==="wins" ? "winsSaved" : "blockersSaved");
-    if(state.db){
-      state.db.doc("summaries/"+weekId).set(updated).then(function(){
-        savedEl.textContent = "Saved";
-        setTimeout(function(){ savedEl.textContent=""; }, 1500);
-      }).catch(function(){ savedEl.textContent = "Couldn't save — try again"; });
-    } else {
-      savedEl.textContent = "Saved locally";
-      setTimeout(function(){ savedEl.textContent=""; }, 1500);
-    }
-  }, 500);
-
-  /* ---- tasks ---- */
-  function renderTasks(){
-    var weekOptions = Array.from(new Set(state.tasks.map(effectiveWeek))).sort();
-    if(weekOptions.indexOf(state.currentWeek.id)===-1) weekOptions.push(state.currentWeek.id);
-    weekOptions.sort();
-    var weekSel = document.getElementById("filterWeek");
-    var cur = weekSel.value;
-    weekSel.innerHTML = '<option value="all">All weeks</option>' + weekOptions.map(function(w){ return '<option value="'+w+'">'+w+"</option>"; }).join("");
-    if(weekOptions.indexOf(cur)>-1) weekSel.value = cur;
-
-    var f = state.filters;
-    var rows = state.tasks.filter(function(t){
-      if(f.project!=="all" && (t.project||"general")!==f.project) return false;
-      if(f.owner!=="all" && t.owner!==f.owner) return false;
-      if(f.status!=="all" && t.status!==f.status) return false;
-      if(f.priority!=="all" && t.priority!==f.priority) return false;
-      if(f.week!=="all" && effectiveWeek(t)!==f.week) return false;
-      if(f.mine && t.owner!==state.me) return false;
-      return true;
-    }).sort(function(a,b){
-      var da = a.deadline || "9999", db_ = b.deadline || "9999";
-      return da < db_ ? -1 : (da > db_ ? 1 : 0);
-    });
-
-    var tbody = document.getElementById("tasksTbody");
-    document.getElementById("tasksEmpty").hidden = rows.length>0;
-    tbody.innerHTML = rows.map(function(t){
-      var overdue = isOverdue(t);
-      var members = teamMembers();
-      var ownerOpts = members.map(function(m){ return '<option value="'+m.id+'" '+(m.id===t.owner?"selected":"")+">"+escapeHtml(m.name)+"</option>"; }).join("");
-      var projOpts = projectsList().map(function(p){ return '<option value="'+p.id+'" '+(p.id===(t.project||"general")?"selected":"")+">"+escapeHtml(p.name)+"</option>"; }).join("");
-      return '<tr class="'+(overdue?"is-overdue":"")+" "+(t.status==="Done"?"is-done":"")+'" data-id="'+t.id+'">' +
-        '<td class="col-title">' +
-          '<div class="task-title-text" contenteditable="true" data-field="title">'+escapeHtml(t.title)+"</div>" +
-          (t.example ? '<span class="pill example" style="margin-top:4px;">Example</span>' : "") +
-          '<div class="task-notes-text" contenteditable="true" data-field="notes">'+escapeHtml(t.notes||"")+"</div>" +
-        "</td>" +
-        '<td><select class="project-select" data-field="project">'+projOpts+"</select></td>" +
-        '<td><span class="owner-chip"><span class="owner-dot" style="background:'+memberColor(t.owner)+'">'+escapeHtml(initials(memberName(t.owner)))+'</span><select class="owner-select" data-field="owner">'+ownerOpts+"</select></span></td>" +
-        '<td><select class="pill-select '+priorityClass(t.priority)+'" data-field="priority">' +
-          ["High","Medium","Low"].map(function(p){ return '<option value="'+p+'" '+(p===t.priority?"selected":"")+">"+p+"</option>"; }).join("") +
-        "</select></td>" +
-        '<td><input type="date" class="deadline-input" data-field="deadline" value="'+(t.deadline||"")+'">'+(overdue?'<div class="pill overdue" style="margin-top:4px;">Overdue</div>':"")+"</td>" +
-        '<td><select class="pill-select '+statusClass(t.status)+'" data-field="status">' +
-          ["Not Started","In Progress","Blocked","Done"].map(function(s){ return '<option value="'+s+'" '+(s===t.status?"selected":"")+">"+s+"</option>"; }).join("") +
-        "</select></td>" +
-        '<td><div class="row-actions"><button class="icon-btn" data-action="delete" title="Delete task"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button></div></td>' +
-      "</tr>";
-    }).join("");
-
-    tbody.querySelectorAll("tr").forEach(function(tr){
-      var id = tr.dataset.id;
-      tr.querySelectorAll("[data-field]").forEach(function(el){
-        var field = el.dataset.field;
-        var evt = (el.tagName==="SELECT" || el.type==="date") ? "change" : "blur";
-        el.addEventListener(evt, function(){
-          var val = el.tagName==="DIV" ? el.textContent.trim() : el.value;
-          if(field==="priority" || field==="status"){ el.className = "pill-select " + (field==="priority"?priorityClass(val):statusClass(val)); }
-          updateTask(id, (function(){ var o={}; o[field]=val; return o; })());
-        });
-      });
-      var delBtn = tr.querySelector('[data-action="delete"]');
-      if(delBtn) delBtn.addEventListener("click", function(){ deleteTask(id); });
-    });
   }
 
   function addTask(data){
     var payload = Object.assign({
       project: "general",
-      owner: state.me || teamMembers()[0].id,
-      priority: "Medium",
+      owners: state.me ? [state.me] : [],
       status: "Not Started",
       deadline: "",
       notes: "",
-      weekOf: state.currentWeek.id,
       example: false,
       createdBy: state.me || null,
       createdAt: Date.now(),
@@ -1183,12 +1252,18 @@
     if(state.db){ state.db.collection("tasks").doc(id).delete().catch(function(e){ console.warn(e); }); }
     else { state.tasks = state.tasks.filter(function(t){ return t.id!==id; }); renderAll(); }
   }
-  function clearExampleTasks(){
-    var ex = state.tasks.filter(function(t){ return t.example; });
-    ex.forEach(function(t){ deleteTask(t.id); });
-  }
 
-  /* ---- meetings ---- */
+  /* ---------------- meetings ---------------- */
+  function meetingClientLabel(m){
+    if(m.client) return m.client;
+    if(m.project && m.project!=="general"){
+      var p = projectById(m.project);
+      if(p) return p.client || p.name;
+    }
+    return "";
+  }
+  function meetingNotes(m){ return (m.notes!=null) ? m.notes : (m.agenda||""); }
+
   function renderMeetings(){
     var weekOptions = Array.from(new Set(state.meetings.map(function(m){ return isoWeekId(parseISODate(m.date)); }))).sort();
     var sel = document.getElementById("filterMeetingWeek");
@@ -1196,9 +1271,15 @@
     sel.innerHTML = '<option value="all">All weeks</option>' + weekOptions.map(function(w){ return '<option value="'+w+'">'+w+"</option>"; }).join("");
     if(weekOptions.indexOf(cur)>-1) sel.value = cur;
 
+    var clientOptions = Array.from(new Set(state.meetings.map(meetingClientLabel).filter(Boolean))).sort();
+    var csel = document.getElementById("filterMeetingClient");
+    var ccur = csel.value;
+    csel.innerHTML = '<option value="all">All clients</option>' + clientOptions.map(function(c){ return '<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+"</option>"; }).join("");
+    if(clientOptions.indexOf(ccur)>-1) csel.value = ccur;
+
     var rows = state.meetings.filter(function(m){
       if(state.filters.meetingWeek!=="all" && isoWeekId(parseISODate(m.date))!==state.filters.meetingWeek) return false;
-      if(state.filters.meetingProject!=="all" && (m.project||"general")!==state.filters.meetingProject) return false;
+      if(state.filters.meetingClient!=="all" && meetingClientLabel(m)!==state.filters.meetingClient) return false;
       return true;
     }).sort(function(a,b){ return (b.date+b.time) < (a.date+a.time) ? -1 : 1; });
 
@@ -1215,18 +1296,21 @@
           (ai.taskId ? '<span class="pill status-inprogress">Task added</span>' : '<button type="button" class="btn btn-ghost" data-action="ai-to-task">→ Task</button>') +
         "</div>";
       }).join("");
+      var client = meetingClientLabel(m);
+      var dur = meetingDurationHours(m);
+      var timeLabel = m.time + (m.endTime ? "–"+m.endTime : "") + (dur ? " ("+fmtHours(dur)+")" : "");
       return '<div class="card meeting-card" data-id="'+m.id+'">' +
         '<div class="meeting-head">' +
           '<div>' +
             '<div class="meeting-title" contenteditable="true" data-field="title">'+escapeHtml(m.title)+"</div>" +
-            '<div class="meeting-meta"><span class="mono">'+m.date+" · "+m.time+'</span><span class="project-tag">'+escapeHtml(projectLabel(m.project))+"</span>" + (m.example ? '<span class="pill example">Example</span>' : "") + "</div>" +
+            '<div class="meeting-meta"><span class="mono">'+m.date+" · "+timeLabel+'</span>' + (client ? '<span class="project-tag">'+escapeHtml(client)+"</span>" : "") + (m.example ? '<span class="pill example">Example</span>' : "") + "</div>" +
           "</div>" +
           '<div style="display:flex; align-items:center; gap:8px;">' +
             '<div class="attendee-dots">'+attendeeDots+"</div>" +
             '<button class="icon-btn" data-action="delete-meeting" title="Delete meeting"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>' +
           "</div>" +
         "</div>" +
-        '<div class="meeting-agenda" contenteditable="true" data-field="agenda">'+escapeHtml(m.agenda||"")+"</div>" +
+        '<textarea class="meeting-notes-text" data-field="notes" placeholder="Notes…">'+escapeHtml(meetingNotes(m))+"</textarea>" +
         '<div class="action-items">'+actionItems+"</div>" +
         '<div class="add-action-item"><input type="text" placeholder="Add an action item…" data-action="new-ai"><button type="button" class="btn" data-action="add-ai">Add</button></div>' +
       "</div>";
@@ -1236,7 +1320,7 @@
       var id = card.dataset.id;
       card.querySelectorAll("[data-field]").forEach(function(el){
         el.addEventListener("blur", function(){
-          var patch = {}; patch[el.dataset.field] = el.textContent.trim();
+          var patch = {}; patch[el.dataset.field] = (el.tagName==="TEXTAREA") ? el.value : el.textContent.trim();
           updateMeeting(id, patch);
         });
       });
@@ -1273,7 +1357,6 @@
   }
 
   function meetingById(id){ return state.meetings.find(function(m){ return m.id===id; }); }
-
   function updateMeeting(id, patch){
     if(state.db){ state.db.collection("meetings").doc(id).update(patch).catch(function(e){ console.warn(e); }); }
     else { var m=meetingById(id); if(m) Object.assign(m, patch); renderAll(); }
@@ -1308,17 +1391,41 @@
     var m = meetingById(meetingId); if(!m) return;
     var items = (m.actionItems||[]).slice();
     if(!items[idx] || items[idx].taskId) return;
-    addTask({ title: items[idx].text, project: m.project||"general", owner: state.me || teamMembers()[0].id, weekOf: isoWeekId(parseISODate(m.date)) });
+    addTask({ title: items[idx].text, project: "general", owners: state.me ? [state.me] : [] });
     items[idx] = Object.assign({}, items[idx], { taskId: "pending" });
     updateMeeting(meetingId, { actionItems: items });
+  }
+
+  /* ---------------- team ---------------- */
+  function renderTeam(){
+    var grid = document.getElementById("teamGrid");
+    grid.innerHTML = teamMembers().map(function(m){
+      return '<div class="card team-card">' +
+        (state.me===m.id ? '<span class="team-you-badge">This is you</span>' : "") +
+        '<div class="team-avatar" style="background:'+memberColor(m.id)+'">'+escapeHtml(initials(m.name))+"</div>" +
+        '<div class="team-role">'+escapeHtml(m.role)+"</div>" +
+        '<input class="team-name-input" data-id="'+m.id+'" value="'+escapeHtml(m.name)+'">' +
+      "</div>";
+    }).join("");
+    grid.querySelectorAll(".team-name-input").forEach(function(input){
+      input.addEventListener("change", function(){
+        updateMemberName(input.dataset.id, input.value.trim() || memberName(input.dataset.id));
+      });
+    });
+  }
+  function updateMemberName(id, name){
+    var members = teamMembers().map(function(m){ return m.id===id ? Object.assign({}, m, {name:name}) : m; });
+    state.team = { members: members };
+    if(state.db){ state.db.doc("team/members").set(state.team).catch(function(){}); }
+    else { renderAll(); }
+    if(state.me===id) pushPresence();
   }
 
   /* ---------------- view switching ---------------- */
   var VIEW_META = {
     dashboard: { title:"Dashboard", sub:"This week at a glance, for the whole team." },
-    tasks: { title:"Tasks", sub:"Every task, owner, and deadline — the rolling team backlog." },
-    meetings: { title:"Meetings", sub:"Agendas and action items from your weekly syncs." },
-    projects: { title:"Proposals", sub:"Every proposal in flight, and what's still open on each." },
+    meetings: { title:"Meetings", sub:"Notes and action items from your weekly syncs." },
+    projects: { title:"Proposals", sub:"Every proposal in flight — client details, submission deadlines, and any extra to-dos, all in one place." },
     team: { title:"Team", sub:"The five of you — names sync live for everyone." }
   };
   function setView(v){
@@ -1334,87 +1441,72 @@
     var btn = e.target.closest(".nav-item"); if(btn) setView(btn.dataset.view);
   });
 
-  document.getElementById("weekPrev").addEventListener("click", function(){
-    state.currentWeek = weekInfo(addDays(state.currentWeek.start, -7));
-    subscribeSummary(state.currentWeek.id);
-    renderWeekNav(); renderDashboard(); renderTasks();
+  function shiftRange(dir){
+    if(state.rangeMode==="week") state.refDate = addDays(state.refDate, 7*dir);
+    else if(state.rangeMode==="month") state.refDate = addMonths(state.refDate, dir);
+    else state.refDate = addYears(state.refDate, dir);
+    state.currentRange = computeRange(state.rangeMode, state.refDate);
+    renderRangeNav(); renderDashboard();
+  }
+  document.getElementById("rangePrev").addEventListener("click", function(){ shiftRange(-1); });
+  document.getElementById("rangeNext").addEventListener("click", function(){ shiftRange(1); });
+  document.getElementById("rangeToday").addEventListener("click", function(){
+    state.refDate = new Date();
+    state.currentRange = computeRange(state.rangeMode, state.refDate);
+    renderRangeNav(); renderDashboard();
   });
-  document.getElementById("weekNext").addEventListener("click", function(){
-    state.currentWeek = weekInfo(addDays(state.currentWeek.start, 7));
-    subscribeSummary(state.currentWeek.id);
-    renderWeekNav(); renderDashboard(); renderTasks();
+  document.getElementById("rangeModeToggle").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-mode]"); if(!btn) return;
+    state.rangeMode = btn.dataset.mode;
+    document.querySelectorAll("#rangeModeToggle .toggle-chip").forEach(function(b){ b.classList.toggle("on", b===btn); });
+    state.refDate = new Date();
+    state.currentRange = computeRange(state.rangeMode, state.refDate);
+    renderRangeNav(); renderDashboard();
   });
-  document.getElementById("weekToday").addEventListener("click", function(){
-    state.currentWeek = weekInfo(new Date());
-    subscribeSummary(state.currentWeek.id);
-    renderWeekNav(); renderDashboard(); renderTasks();
-  });
-
-  document.getElementById("winsInput").addEventListener("input", function(){ saveSummary("wins", this.value); });
-  document.getElementById("blockersInput").addEventListener("input", function(){ saveSummary("blockers", this.value); });
-
-  document.getElementById("addTaskForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    var title = document.getElementById("newTaskTitle").value.trim();
-    if(!title) return;
-    addTask({
-      title: title,
-      project: document.getElementById("newTaskProject").value || "general",
-      owner: document.getElementById("newTaskOwner").value,
-      priority: document.getElementById("newTaskPriority").value,
-      deadline: document.getElementById("newTaskDeadline").value || ""
-    });
-    e.target.reset();
-    document.getElementById("newTaskPriority").value = "Medium";
-  });
-
-  ["filterProject","filterOwner","filterStatus","filterPriority","filterWeek"].forEach(function(id){
-    document.getElementById(id).addEventListener("change", function(){
-      var map = { filterProject:"project", filterOwner:"owner", filterStatus:"status", filterPriority:"priority", filterWeek:"week" };
-      state.filters[map[id]] = this.value;
-      renderTasks();
-    });
-  });
-  document.getElementById("filterMine").addEventListener("click", function(){
-    state.filters.mine = !state.filters.mine;
-    this.classList.toggle("on", state.filters.mine);
-    renderTasks();
-  });
-  document.getElementById("filterMeetingWeek").addEventListener("change", function(){
-    state.filters.meetingWeek = this.value; renderMeetings();
-  });
-  document.getElementById("filterMeetingProject").addEventListener("change", function(){
-    state.filters.meetingProject = this.value; renderMeetings();
-  });
-  document.getElementById("clearExamplesTasks").addEventListener("click", clearExampleTasks);
-  document.getElementById("clearExamplesMeetings").addEventListener("click", clearExampleMeetings);
 
   document.getElementById("addProjectForm").addEventListener("submit", function(e){
     e.preventDefault();
     var name = document.getElementById("newProjectName").value.trim();
-    if(!name) return;
+    var client = document.getElementById("newProjectClient").value.trim();
+    if(!name || !client) return;
+    var npOwners = document.getElementById("newProjectOwners");
+    var owners = npOwners.dataset.selected ? JSON.parse(npOwners.dataset.selected) : (state.me ? [state.me] : []);
     addProject({
       name: name,
-      client: document.getElementById("newProjectClient").value.trim(),
+      client: client,
+      bd: document.getElementById("newProjectBd").value.trim(),
+      language: document.getElementById("newProjectLanguage").value.trim(),
+      country: document.getElementById("newProjectCountry").value.trim(),
+      submitBy: document.getElementById("newProjectSubmitBy").value || "",
+      owners: owners,
       status: document.getElementById("newProjectStatus").value
     });
     e.target.reset();
     document.getElementById("newProjectStatus").value = "Active";
+    npOwners.dataset.selected = JSON.stringify(state.me ? [state.me] : []);
+    npOwners.innerHTML = ownerChipsHtml(state.me ? [state.me] : []);
+    wireOwnerPickerToggle(npOwners);
   });
+
+  document.getElementById("filterMeetingWeek").addEventListener("change", function(){ state.filters.meetingWeek = this.value; renderMeetings(); });
+  document.getElementById("filterMeetingClient").addEventListener("change", function(){ state.filters.meetingClient = this.value; renderMeetings(); });
+  document.getElementById("clearExamplesMeetings").addEventListener("click", clearExampleMeetings);
 
   document.getElementById("addMeetingForm").addEventListener("submit", function(e){
     e.preventDefault();
     var title = document.getElementById("newMeetingTitle").value.trim();
     var date = document.getElementById("newMeetingDate").value;
     if(!title || !date) return;
-    var attendees = Array.from(document.querySelectorAll(".attendee-chip.on")).map(function(c){ return c.dataset.id; });
+    var attEl = document.getElementById("newMeetingAttendees");
+    var attendees = attEl.dataset.selected ? JSON.parse(attEl.dataset.selected) : Array.from(document.querySelectorAll(".attendee-chip.on")).map(function(c){ return c.dataset.id; });
     var payload = {
       title: title,
-      project: document.getElementById("newMeetingProject").value || "general",
+      client: document.getElementById("newMeetingClient").value.trim(),
       date: date,
       time: document.getElementById("newMeetingTime").value || "10:00",
+      endTime: document.getElementById("newMeetingEndTime").value || "",
       attendees: attendees,
-      agenda: document.getElementById("newMeetingAgenda").value.trim(),
+      notes: document.getElementById("newMeetingNotes").value,
       actionItems: [],
       example: false,
       createdBy: state.me || null,
@@ -1424,6 +1516,8 @@
     else { payload.id = uid(); state.meetings.push(payload); renderAll(); }
     e.target.reset();
     document.getElementById("newMeetingTime").value = "10:00";
+    document.getElementById("newMeetingEndTime").value = "11:00";
+    attEl.dataset.selected = "";
     renderWhoamiOwnerLists();
   });
 
@@ -1451,14 +1545,44 @@
   document.getElementById("whoamiBtn").addEventListener("click", openWhoamiModal);
   document.getElementById("whoamiCancel").addEventListener("click", function(){ whoamiModal.hidden = true; });
 
+  /* ---------------- passkey gate ---------------- */
+  var SITE_PASSKEY = "tamaseh2026";
+  function isUnlocked(){ return localStorage_get("cadence.unlocked") === "1"; }
+  function unlock(){
+    localStorage_set("cadence.unlocked", "1");
+    document.getElementById("passkeyGate").hidden = true;
+    document.getElementById("appRoot").hidden = false;
+    bootApp();
+  }
+  document.getElementById("passkeyForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var val = document.getElementById("passkeyInput").value.trim();
+    if(val.toLowerCase() === SITE_PASSKEY.toLowerCase()){
+      unlock();
+    } else {
+      document.getElementById("passkeyError").textContent = "That's not it — check with your team lead.";
+      document.getElementById("passkeyInput").value = "";
+      document.getElementById("passkeyInput").focus();
+    }
+  });
+
   /* ---------------- boot ---------------- */
-  renderWeekNav();
-  setView("dashboard");
-  initCapabilities();
-  setTimeout(function(){ if(!state.me) openWhoamiModal(); }, 300);
+  function bootApp(){
+    renderRangeNav();
+    setView("dashboard");
+    initCapabilities();
+    setTimeout(function(){ if(!state.me) openWhoamiModal(); }, 300);
+  }
 
+  if(isUnlocked()){
+    document.getElementById("passkeyGate").hidden = true;
+    document.getElementById("appRoot").hidden = false;
+    bootApp();
+  } else {
+    document.getElementById("passkeyGate").hidden = false;
+    document.getElementById("appRoot").hidden = true;
+  }
 })();
-
 </script>
 </body>
 </html>
