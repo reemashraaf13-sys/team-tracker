@@ -336,24 +336,48 @@
   .add-task-row input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); }
   .proposal-tasks-empty{ font-size:12px; color:var(--text-faint); padding:4px 2px; }
 
+  /* ---------- Proposal pipeline table (dashboard) ---------- */
+  .pipeline-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:760px; }
+  .pipeline-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint); font-weight:700; padding:0 10px 8px; white-space:nowrap; }
+  .pipeline-table td{ padding:9px 10px; border-top:1px solid var(--border); vertical-align:middle; }
+  .pipeline-table tr:first-child td{ border-top:none; }
+  .pipeline-table td.pt-name{ font-weight:700; }
+  .pipeline-table td.pt-muted{ color:var(--text-faint); }
+  .pipeline-table tr.overdue td.pt-deadline{ color:var(--red); font-weight:700; }
+
   /* ---------- Team snapshot (dashboard) ---------- */
-  .person-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; padding:14px 20px 20px; }
-  .person-card{ border:1px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--surface-2); display:flex; flex-direction:column; gap:8px; }
+  .person-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:14px 20px 20px; }
+  .person-card{ border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:var(--surface-2); display:flex; flex-direction:column; gap:10px; }
+  .person-card.wide{ grid-column:1 / -1; }
   .person-card-head{ display:flex; align-items:center; gap:8px; }
   .person-card-name{ font-weight:700; font-size:13px; }
   .person-card-role{ font-size:10.5px; color:var(--text-faint); }
-  .person-items{ display:flex; flex-direction:column; gap:3px; min-height:18px; }
-  .person-item{ font-size:11.5px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .person-item.overdue{ color:var(--red); font-weight:600; }
-  .person-item.muted{ color:var(--text-faint); }
+  .person-sections{ display:flex; flex-direction:column; }
+  .person-card.wide .person-sections{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .person-section{ display:flex; flex-direction:column; gap:4px; padding-top:8px; border-top:1px solid var(--border); }
+  .person-section:first-of-type{ padding-top:0; border-top:none; }
+  .person-card.wide .person-section{ padding-top:0; border-top:none; }
+  .person-card.wide .person-section:last-child{ border-left:1px solid var(--border); padding-left:18px; }
+  .person-section-label{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); margin-bottom:2px; }
+  .person-row{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-muted); }
+  .person-row-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+  .person-row.overdue .person-row-title{ color:var(--red); font-weight:600; }
+  .person-row.muted{ color:var(--text-faint); font-style:italic; }
   .person-empty{ font-size:11.5px; color:var(--text-faint); font-style:italic; }
-  .person-foot{ font-size:11px; color:var(--text-faint); margin-top:auto; padding-top:6px; border-top:1px solid var(--border); }
+  .person-foot{ font-size:11px; color:var(--text-faint); margin-top:auto; padding-top:8px; border-top:1px solid var(--border); }
+  @media (max-width: 700px){
+    .person-grid{ grid-template-columns:1fr; }
+    .person-card.wide .person-sections{ grid-template-columns:1fr; }
+    .person-card.wide .person-section:last-child{ border-left:none; padding-left:0; border-top:1px solid var(--border); padding-top:8px; }
+  }
 
   /* ---------- Team ---------- */
   .team-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
   .team-card{ padding:16px 18px; display:flex; flex-direction:column; gap:10px; }
   .team-avatar{ width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; font-size:16px; }
   .team-role{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); font-weight:700; }
+  .team-role-input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:5px 9px; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; font-weight:700; color:var(--text-faint); width:100%; }
+  .team-role-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); color:var(--text); }
   .team-name-input{ border:1px solid var(--border); background:var(--surface-2); border-radius:8px; padding:8px 10px; font-size:14px; font-weight:600; width:100%; }
   .team-name-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
   .team-you-badge{ font-size:10.5px; font-weight:700; color:var(--accent-strong); background:var(--accent-soft); border-radius:999px; padding:2px 8px; align-self:flex-start; }
@@ -413,15 +437,15 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         Dashboard
       </button>
-      <button class="nav-item" data-view="meetings">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-        Meetings
-        <span class="count" id="navCountMeetings">0</span>
-      </button>
       <button class="nav-item" data-view="projects">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
         Proposals
         <span class="count" id="navCountProjects">0</span>
+      </button>
+      <button class="nav-item" data-view="meetings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        Meetings
+        <span class="count" id="navCountMeetings">0</span>
       </button>
       <button class="nav-item" data-view="team">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="18" cy="8.5" r="2.4"/><path d="M16.3 14.2c2.7.4 4.7 2.4 4.7 5.3"/></svg>
@@ -465,31 +489,27 @@
     <!-- DASHBOARD -->
     <section class="view" id="view-dashboard">
       <div class="tiles">
-        <div class="tile accent"><div class="tile-label">Tasks due</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
+        <div class="tile accent"><div class="tile-label">Due</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
         <div class="tile good"><div class="tile-label">Completed</div><div class="tile-value" id="statDone">0</div><div class="tile-sub" id="statDoneSub">&nbsp;</div></div>
         <div class="tile danger"><div class="tile-label">Overdue</div><div class="tile-value" id="statOverdue">0</div><div class="tile-sub" id="statOverdueSub">&nbsp;</div></div>
         <div class="tile warn"><div class="tile-label">Meetings</div><div class="tile-value" id="statMeetings">0</div><div class="tile-sub" id="statMeetingsSub">&nbsp;</div></div>
       </div>
 
       <div class="card">
-        <div class="card-head"><h2>Team snapshot</h2><span class="muted" id="personSnapshotLabel"></span></div>
-        <div class="person-grid" id="personGrid"></div>
+        <div class="card-head"><h2>Proposal pipeline</h2><span class="muted" id="pipelineCount"></span></div>
+        <div style="overflow-x:auto; padding:14px 20px 18px;">
+          <table class="pipeline-table" id="pipelineTable">
+            <thead>
+              <tr><th>Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Submit by</th><th>Owners</th></tr>
+            </thead>
+            <tbody id="pipelineTableBody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card">
-        <div class="card-head"><h2>Proposal pipeline</h2><span class="muted" id="pipelineCount"></span></div>
-        <div class="mini-list" id="pipelineList" style="padding-bottom:6px;"></div>
-      </div>
-
-      <div class="two-col">
-        <div class="card">
-          <div class="card-head"><h2>Upcoming &amp; overdue deadlines</h2></div>
-          <div class="mini-list" id="upcomingList"></div>
-        </div>
-        <div class="card">
-          <div class="card-head"><h2>Meetings this range</h2></div>
-          <div class="mini-list" id="dashMeetingsList"></div>
-        </div>
+        <div class="card-head"><h2>Team snapshot</h2><span class="muted" id="personSnapshotLabel"></span></div>
+        <div class="person-grid" id="personGrid"></div>
       </div>
     </section>
 
@@ -544,6 +564,10 @@
           </div>
         </form>
       </div>
+      <div class="filter-bar" style="margin:2px 2px 0;">
+        <span class="muted" style="font-size:12px;">Filter:</span>
+        <select id="filterProjectOwner"><option value="all">All people</option></select>
+      </div>
       <div class="card" id="projectsListCard">
         <div id="projectsList"></div>
       </div>
@@ -552,9 +576,6 @@
 
     <!-- TEAM -->
     <section class="view" id="view-team" hidden>
-      <div class="card card-pad" style="margin-bottom:4px;">
-        <p class="muted" style="margin:0;">Names sync live for everyone. Roles are fixed (Associate Director, 2 Senior Managers, 2 Managers) — update names here if anything changes.</p>
-      </div>
       <div class="team-grid" id="teamGrid"></div>
     </section>
   </main>
@@ -600,8 +621,8 @@
   function pad2(n){ return String(n).padStart(2,"0"); }
   function isoDate(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
   function parseISODate(s){ if(!s) return null; var p=s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
-  function startOfWeek(d){ var nd=new Date(d.getFullYear(), d.getMonth(), d.getDate()); var day=(nd.getDay()+6)%7; nd.setDate(nd.getDate()-day); return nd; }
-  function endOfWeek(d){ var s=startOfWeek(d); var e=new Date(s); e.setDate(e.getDate()+6); return e; }
+  function startOfWeek(d){ var nd=new Date(d.getFullYear(), d.getMonth(), d.getDate()); nd.setDate(nd.getDate()-nd.getDay()); return nd; }
+  function endOfWeek(d){ var s=startOfWeek(d); var e=new Date(s); e.setDate(e.getDate()+4); return e; }
   function isoWeekId(d){
     var dt=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     var dayNum = dt.getUTCDay() || 7;
@@ -674,7 +695,7 @@
   function statusClass(s){ return "status-"+String(s||"Not Started").toLowerCase().replace(/\s+/g,""); }
   function pstatusClass(s){ return "pstatus-"+String(s||"Active").toLowerCase(); }
 
-  var GENERAL_PROJECT = { id:"general", name:"Internal / General", client:"", status:"Active" };
+  var GENERAL_PROJECT = { id:"general", name:"Other tasks", client:"", status:"Active" };
 
   /* ---------------- state ---------------- */
   var state = {
@@ -688,7 +709,7 @@
     rangeMode: "week",
     refDate: new Date(),
     currentRange: null,
-    filters: { meetingWeek:"all", meetingClient:"all" },
+    filters: { meetingWeek:"all", meetingClient:"all", projectOwner:"all" },
     peers: []
   };
 
@@ -708,6 +729,12 @@
 
   function taskOwners(t){ return t.owners || (t.owner ? [t.owner] : []); }
   function proposalOwners(p){ return p.owners || (p.owner ? [p.owner] : []); }
+  function ownerDotsHtml(ids){
+    if(!ids || !ids.length) return '<span class="muted" style="font-size:11px;">Unassigned</span>';
+    return '<div class="attendee-dots">' + ids.map(function(id){
+      return '<span class="presence-dot" style="background:'+memberColor(id)+'" title="'+escapeHtml(memberName(id))+'">'+escapeHtml(initials(memberName(id)))+"</span>";
+    }).join("") + "</div>";
+  }
 
   function isOverdue(task){
     return !!task.deadline && task.deadline < todayStr() && task.status !== "Done";
@@ -938,110 +965,132 @@
     var clientList = document.getElementById("clientSuggestions");
     var clients = Array.from(new Set(state.projects.map(function(p){ return p.client; }).filter(Boolean)));
     clientList.innerHTML = clients.map(function(c){ return '<option value="'+escapeHtml(c)+'">'; }).join("");
+
+    var fpo = document.getElementById("filterProjectOwner");
+    var fpoCur = fpo.value || state.filters.projectOwner;
+    fpo.innerHTML = '<option value="all">All people</option>' + members.map(function(m){ return '<option value="'+m.id+'">'+escapeHtml(m.name)+"</option>"; }).join("");
+    fpo.value = fpoCur;
   }
 
   /* ---------------- dashboard ---------------- */
   function renderDashboard(){
     var range = state.currentRange;
     var rangeTasks = state.tasks.filter(function(t){ return t.deadline && dateInRange(t.deadline, range); });
-    var done = rangeTasks.filter(function(t){ return t.status==="Done"; });
-    var overdue = state.tasks.filter(isOverdue);
+    var rangeProposalsDue = state.projects.filter(function(p){ return p.submitBy && dateInRange(p.submitBy, range); });
+    var doneTasks = rangeTasks.filter(function(t){ return t.status==="Done"; });
+    var doneProposals = rangeProposalsDue.filter(function(p){ return p.status==="Submitted" || p.status==="Closed"; });
+    var totalDue = rangeTasks.length + rangeProposalsDue.length;
+    var totalDone = doneTasks.length + doneProposals.length;
+    var overdue = state.tasks.filter(isOverdue).length + state.projects.filter(isProposalOverdue).length;
     var rangeMeetings = state.meetings.filter(function(m){ return dateInRange(m.date, range); });
     var totalHours = rangeMeetings.reduce(function(sum,m){ return sum+meetingDurationHours(m); }, 0);
     var rangeWord = state.rangeMode==="week" ? "this week" : state.rangeMode==="month" ? "this month" : "this year";
 
-    document.getElementById("statTotal").textContent = rangeTasks.length;
-    document.getElementById("statTotalSub").textContent = rangeTasks.length ? (rangeTasks.length-done.length)+" remaining "+rangeWord : "No tasks due "+rangeWord;
-    document.getElementById("statDone").textContent = done.length;
-    document.getElementById("statDoneSub").textContent = rangeTasks.length ? Math.round(100*done.length/rangeTasks.length)+"% of "+rangeWord : " ";
-    document.getElementById("statOverdue").textContent = overdue.length;
-    document.getElementById("statOverdueSub").textContent = overdue.length ? "across all proposals" : "nothing overdue";
+    document.getElementById("statTotal").textContent = totalDue;
+    document.getElementById("statTotalSub").textContent = totalDue ? (totalDue-totalDone)+" remaining "+rangeWord+" (tasks + proposals)" : "Nothing due "+rangeWord;
+    document.getElementById("statDone").textContent = totalDone;
+    document.getElementById("statDoneSub").textContent = totalDue ? Math.round(100*totalDone/totalDue)+"% of "+rangeWord : " ";
+    document.getElementById("statOverdue").textContent = overdue;
+    document.getElementById("statOverdueSub").textContent = overdue ? "across tasks & proposals" : "nothing overdue";
     document.getElementById("statMeetings").textContent = rangeMeetings.length;
     document.getElementById("statMeetingsSub").textContent = rangeMeetings.length ? fmtHours(totalHours)+" total "+rangeWord : "none scheduled";
 
-    var deadlineItems = [];
-    state.projects.forEach(function(p){
-      if(p.status!=="Closed" && p.submitBy){
-        deadlineItems.push({ kind:"proposal", label:"Submit: "+p.name, date:p.submitBy, overdue:isProposalOverdue(p) });
-      }
-    });
-    state.tasks.forEach(function(t){
-      if(t.status!=="Done" && t.deadline){
-        deadlineItems.push({ kind:"task", label:t.title+" — "+projectLabel(t.project), date:t.deadline, overdue:isOverdue(t) });
-      }
-    });
-    deadlineItems.sort(function(a,b){ return a.date<b.date?-1:(a.date>b.date?1:0); });
-    deadlineItems = deadlineItems.slice(0,8);
-    var upEl = document.getElementById("upcomingList");
-    upEl.innerHTML = deadlineItems.length ? deadlineItems.map(function(it){
-      return '<div class="mini-row">' +
-        '<span class="pill '+(it.kind==="proposal"?"pstatus-active":"status-inprogress")+'">'+(it.kind==="proposal"?"Submission":"Task")+"</span>" +
-        '<span class="mini-title">'+escapeHtml(it.label)+"</span>" +
-        '<span class="mono" style="font-size:11.5px; color:'+(it.overdue?"var(--red)":"var(--text-faint)")+'">'+it.date+(it.overdue?" · overdue":"")+"</span>" +
-      "</div>";
-    }).join("") : '<div class="mini-empty">Nothing on deck.</div>';
-
-    var pipEl = document.getElementById("pipelineList");
-    var active = activeProjectsList();
-    document.getElementById("pipelineCount").textContent = active.length ? active.length+" active" : "";
-    pipEl.innerHTML = active.length ? active.map(function(p){
-      var pTasks = state.tasks.filter(function(t){ return t.project===p.id; });
-      var open = pTasks.filter(function(t){ return t.status!=="Done"; });
-      var pOverdue = isProposalOverdue(p);
-      return '<div class="mini-row">' +
-        '<span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span>" +
-        '<span class="mini-title">'+escapeHtml(p.name)+(p.client?' <span class="muted" style="font-weight:400;">· '+escapeHtml(p.client)+"</span>":"")+"</span>" +
-        '<span class="mono" style="font-size:11px; color:'+(pOverdue?"var(--red)":"var(--text-faint)")+'">'+open.length+" open"+(p.submitBy?" · submit "+p.submitBy:"")+(pOverdue?" · overdue":"")+"</span>" +
-      "</div>";
-    }).join("") : '<div class="mini-empty">No active proposals yet — add one from the Proposals tab.</div>';
-
-    var dmEl = document.getElementById("dashMeetingsList");
-    var sortedRangeMeetings = rangeMeetings.slice().sort(function(a,b){ return (a.date+a.time) < (b.date+b.time) ? -1 : 1; });
-    dmEl.innerHTML = sortedRangeMeetings.length ? sortedRangeMeetings.map(function(m){
-      var dur = meetingDurationHours(m);
-      return '<div class="mini-row">' +
-        '<span class="mono" style="font-size:11.5px; color:var(--text-faint); width:90px;">'+m.date.slice(5)+" "+m.time+"</span>" +
-        '<span class="mini-title">'+escapeHtml(m.title)+"</span>" +
-        (dur ? '<span class="mono" style="font-size:11px; color:var(--text-faint);">'+fmtHours(dur)+"</span>" : "") +
-      "</div>";
-    }).join("") : '<div class="mini-empty">No meetings logged for this range yet.</div>';
-
+    renderPipelineTable();
     renderPersonSnapshot(range, rangeMeetings);
+  }
+
+  function renderPipelineTable(){
+    var tbody = document.getElementById("pipelineTableBody");
+    var active = activeProjectsList().slice().sort(function(a,b){
+      var da = a.submitBy || "9999-99-99", db_ = b.submitBy || "9999-99-99";
+      return da<db_?-1:(da>db_?1:0);
+    });
+    document.getElementById("pipelineCount").textContent = active.length ? active.length+" active" : "";
+    tbody.innerHTML = active.length ? active.map(function(p){
+      var pOverdue = isProposalOverdue(p);
+      return '<tr class="'+(pOverdue?"overdue":"")+'">' +
+        '<td><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span></td>" +
+        '<td class="pt-name">'+escapeHtml(p.name)+"</td>" +
+        '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
+        '<td'+(p.bd?"":' class="pt-muted"')+'>'+escapeHtml(p.bd||"—")+"</td>" +
+        '<td'+(p.language?"":' class="pt-muted"')+'>'+escapeHtml(p.language||"—")+"</td>" +
+        '<td'+(p.country?"":' class="pt-muted"')+'>'+escapeHtml(p.country||"—")+"</td>" +
+        '<td class="pt-deadline mono">'+(p.submitBy||"—")+(pOverdue?" · overdue":"")+"</td>" +
+        '<td>'+ownerDotsHtml(proposalOwners(p))+"</td>" +
+      "</tr>";
+    }).join("") : '<tr><td colspan="8" style="text-align:center; padding:22px; color:var(--text-faint); border-top:none;">No active proposals yet — add one from the Proposals tab.</td></tr>';
   }
 
   function renderPersonSnapshot(range, rangeMeetings){
     document.getElementById("personSnapshotLabel").textContent = state.currentRange.label;
     var grid = document.getElementById("personGrid");
-    grid.innerHTML = teamMembers().map(function(m){
-      var items = [];
-      state.projects.forEach(function(p){
-        if(p.status!=="Closed" && proposalOwners(p).indexOf(m.id)>-1){
-          items.push({ label:"Submit: "+p.name, date:p.submitBy, overdue:isProposalOverdue(p) });
-        }
-      });
-      state.tasks.forEach(function(t){
-        if(t.status!=="Done" && taskOwners(t).indexOf(m.id)>-1){
-          items.push({ label:t.title, date:t.deadline, overdue:isOverdue(t) });
-        }
-      });
-      items.sort(function(a,b){ var da=a.date||"9999", db_=b.date||"9999"; return da<db_?-1:(da>db_?1:0); });
-      var shown = items.slice(0,4);
-      var extra = items.length - shown.length;
+    grid.innerHTML = teamMembers().map(function(m, idx){
+      var isWide = idx === 0;
+      var maxProposals = isWide ? 6 : 3;
+      var maxTasks = isWide ? 4 : 2;
+      var maxMeetings = isWide ? 6 : 3;
 
-      var theirMeetings = rangeMeetings.filter(function(mt){ return (mt.attendees||[]).indexOf(m.id)>-1; });
+      var myProposals = state.projects.filter(function(p){ return p.status!=="Closed" && proposalOwners(p).indexOf(m.id)>-1; })
+        .sort(function(a,b){ var da=a.submitBy||"9999-99-99", db_=b.submitBy||"9999-99-99"; return da<db_?-1:(da>db_?1:0); });
+      var myTasks = state.tasks.filter(function(t){ return t.status!=="Done" && taskOwners(t).indexOf(m.id)>-1; })
+        .sort(function(a,b){ var da=a.deadline||"9999-99-99", db_=b.deadline||"9999-99-99"; return da<db_?-1:(da>db_?1:0); });
+
+      var theirMeetings = rangeMeetings.filter(function(mt){ return (mt.attendees||[]).indexOf(m.id)>-1; })
+        .sort(function(a,b){ return (a.date+a.time) < (b.date+b.time) ? -1 : 1; });
       var hours = theirMeetings.reduce(function(sum,mt){ return sum+meetingDurationHours(mt); },0);
 
-      return '<div class="person-card">' +
+      var shownProposals = myProposals.slice(0,maxProposals);
+      var extraProposals = myProposals.length - shownProposals.length;
+      var proposalRows = shownProposals.map(function(p){
+        return '<div class="person-row'+(isProposalOverdue(p)?" overdue":"")+'">' +
+          '<span class="pill '+pstatusClass(p.status)+'" style="font-size:9.5px; padding:2px 7px;">'+p.status+"</span>" +
+          '<span class="person-row-title">'+escapeHtml(p.name)+"</span>" +
+        "</div>";
+      }).join("");
+
+      var shownTasks = myTasks.slice(0,maxTasks);
+      var extraTasks = myTasks.length - shownTasks.length;
+      var taskRows = shownTasks.map(function(t){
+        return '<div class="person-row'+(isOverdue(t)?" overdue":"")+'">' +
+          '<span class="pill '+statusClass(t.status)+'" style="font-size:9.5px; padding:2px 7px;">'+t.status+"</span>" +
+          '<span class="person-row-title">'+escapeHtml(t.title)+"</span>" +
+        "</div>";
+      }).join("");
+
+      var extraTotal = extraProposals + extraTasks;
+      var hasWork = myProposals.length || myTasks.length;
+
+      var shownMeetings = theirMeetings.slice(0,maxMeetings);
+      var extraMeetings = theirMeetings.length - shownMeetings.length;
+      var meetingRows = shownMeetings.map(function(mt){
+        var dur = meetingDurationHours(mt);
+        return '<div class="person-row">' +
+          '<span class="mono" style="font-size:10px; color:var(--text-faint); flex:none;">'+mt.date.slice(5)+"</span>" +
+          '<span class="person-row-title">'+escapeHtml(mt.title)+"</span>" +
+          (dur ? '<span class="mono" style="font-size:10px; color:var(--text-faint); flex:none;">'+fmtHours(dur)+"</span>" : "") +
+        "</div>";
+      }).join("");
+
+      return '<div class="person-card'+(isWide?" wide":"")+'">' +
         '<div class="person-card-head">' +
           '<span class="team-avatar" style="width:30px;height:30px;font-size:12px;border-radius:9px;background:'+memberColor(m.id)+';">'+escapeHtml(initials(m.name))+"</span>" +
           '<span><span class="person-card-name" style="display:block;">'+escapeHtml(m.name)+'</span><span class="person-card-role">'+escapeHtml(m.role)+"</span></span>" +
         "</div>" +
-        '<div class="person-items">' +
-          (shown.length ? shown.map(function(it){
-            return '<div class="person-item'+(it.overdue?" overdue":"")+'">'+escapeHtml(it.label)+(it.date?" · "+it.date:"")+"</div>";
-          }).join("") + (extra>0 ? '<div class="person-item muted">+'+extra+" more</div>" : "") : '<div class="person-empty">Nothing open right now</div>') +
+        '<div class="person-sections">' +
+          '<div class="person-section">' +
+            '<div class="person-section-label">Proposals &amp; tasks</div>' +
+            (hasWork
+              ? proposalRows + taskRows + (extraTotal>0 ? '<div class="person-row muted">+'+extraTotal+" more</div>" : "")
+              : '<div class="person-empty">Nothing open right now</div>') +
+          "</div>" +
+          '<div class="person-section">' +
+            '<div class="person-section-label">Meetings · '+state.currentRange.label+"</div>" +
+            (theirMeetings.length
+              ? meetingRows + (extraMeetings>0 ? '<div class="person-row muted">+'+extraMeetings+" more</div>" : "")
+              : '<div class="person-empty">No meetings this range</div>') +
+          "</div>" +
         "</div>" +
-        '<div class="person-foot">'+theirMeetings.length+" meeting"+(theirMeetings.length===1?"":"s")+" · "+fmtHours(hours)+" · "+state.currentRange.label+"</div>" +
+        '<div class="person-foot">'+theirMeetings.length+" meeting"+(theirMeetings.length===1?"":"s")+" · "+fmtHours(hours)+" total</div>" +
       "</div>";
     }).join("");
   }
@@ -1057,9 +1106,20 @@
       var da = a.submitBy || "9999-99-99", db_ = b.submitBy || "9999-99-99";
       return da<db_?-1:(da>db_?1:0);
     });
-    var ordered = [GENERAL_PROJECT].concat(real);
 
-    listEl.innerHTML = ordered.map(function(p){ return renderProposalCardHtml(p); }).join("");
+    var filterId = state.filters.projectOwner;
+    var showGeneral = true;
+    if(filterId && filterId!=="all"){
+      real = real.filter(function(p){
+        if(proposalOwners(p).indexOf(filterId)>-1) return true;
+        return state.tasks.some(function(t){ return (t.project||"general")===p.id && taskOwners(t).indexOf(filterId)>-1; });
+      });
+      showGeneral = state.tasks.some(function(t){ return (t.project||"general")==="general" && taskOwners(t).indexOf(filterId)>-1; });
+    }
+    var ordered = showGeneral ? [GENERAL_PROJECT].concat(real) : real;
+
+    listEl.innerHTML = ordered.length ? ordered.map(function(p){ return renderProposalCardHtml(p); }).join("")
+      : '<div class="empty-state"><strong>No matches</strong>Nobody with that filter has a proposal or task right now.</div>';
     listEl.querySelectorAll(".proposal-card").forEach(function(card){ wireProposalCard(card); });
   }
 
@@ -1071,7 +1131,7 @@
 
     var head = '<div class="proposal-top">' +
       (isGeneral
-        ? '<div class="project-name-input" style="flex:1 1 240px; font-weight:800; padding:6px 9px; background:transparent; border-color:transparent;">Internal / General</div>'
+        ? '<div class="project-name-input" style="flex:1 1 240px; font-weight:800; padding:6px 9px; background:transparent; border-color:transparent;">Other tasks</div>'
         : '<input class="project-name-input" data-field="name" value="'+escapeHtml(p.name)+'">') +
       (isGeneral ? "" :
         '<select class="pill-select '+pstatusClass(p.status)+'" data-field="status">' +
@@ -1082,7 +1142,9 @@
       (isGeneral ? "" : '<button class="icon-btn" data-action="delete-project" title="Delete proposal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>') +
     "</div>";
 
-    var meta = isGeneral ? "" : (
+    var meta = isGeneral ? (
+      '<p class="muted" style="margin:0; font-size:12px;">A place for to-dos that aren\'t tied to a specific proposal — internal admin, one-off tasks, etc.</p>'
+    ) : (
       '<div class="proposal-meta-grid">' +
         '<input data-field="client" placeholder="Client *" value="'+escapeHtml(p.client||"")+'">' +
         '<input data-field="bd" placeholder="BD" value="'+escapeHtml(p.bd||"")+'">' +
@@ -1142,7 +1204,7 @@
       });
       var delBtn = card.querySelector('[data-action="delete-project"]');
       if(delBtn) delBtn.addEventListener("click", function(){
-        if(confirm("Delete this proposal? Its tasks will move to Internal / General.")) deleteProject(pid);
+        if(confirm("Delete this proposal? Its tasks will move to \"Other tasks\".")) deleteProject(pid);
       });
       var ownersPicker = card.querySelector('.proposal-owners-row .owner-picker[data-role="proposal-owners"]');
       if(ownersPicker){
@@ -1298,12 +1360,18 @@
       }).join("");
       var client = meetingClientLabel(m);
       var dur = meetingDurationHours(m);
-      var timeLabel = m.time + (m.endTime ? "–"+m.endTime : "") + (dur ? " ("+fmtHours(dur)+")" : "");
       return '<div class="card meeting-card" data-id="'+m.id+'">' +
         '<div class="meeting-head">' +
           '<div>' +
             '<div class="meeting-title" contenteditable="true" data-field="title">'+escapeHtml(m.title)+"</div>" +
-            '<div class="meeting-meta"><span class="mono">'+m.date+" · "+timeLabel+'</span>' + (client ? '<span class="project-tag">'+escapeHtml(client)+"</span>" : "") + (m.example ? '<span class="pill example">Example</span>' : "") + "</div>" +
+            '<div class="meeting-meta">' +
+              '<input type="date" class="deadline-input" data-field="date" value="'+(m.date||"")+'">' +
+              '<input type="time" class="deadline-input" data-field="time" value="'+(m.time||"")+'">' +
+              '<span class="muted" style="font-size:11px;">–</span>' +
+              '<input type="time" class="deadline-input" data-field="endTime" value="'+(m.endTime||"")+'">' +
+              (dur ? '<span class="mono" style="font-size:11px; color:var(--text-faint);">('+fmtHours(dur)+")</span>" : "") +
+              (client ? '<span class="project-tag">'+escapeHtml(client)+"</span>" : "") + (m.example ? '<span class="pill example">Example</span>' : "") +
+            "</div>" +
           "</div>" +
           '<div style="display:flex; align-items:center; gap:8px;">' +
             '<div class="attendee-dots">'+attendeeDots+"</div>" +
@@ -1319,8 +1387,10 @@
     list.querySelectorAll(".meeting-card").forEach(function(card){
       var id = card.dataset.id;
       card.querySelectorAll("[data-field]").forEach(function(el){
-        el.addEventListener("blur", function(){
-          var patch = {}; patch[el.dataset.field] = (el.tagName==="TEXTAREA") ? el.value : el.textContent.trim();
+        var evt = (el.tagName==="INPUT") ? "change" : "blur";
+        el.addEventListener(evt, function(){
+          var val = (el.tagName==="TEXTAREA" || el.tagName==="INPUT") ? el.value : el.textContent.trim();
+          var patch = {}; patch[el.dataset.field] = val;
           updateMeeting(id, patch);
         });
       });
@@ -1403,18 +1473,23 @@
       return '<div class="card team-card">' +
         (state.me===m.id ? '<span class="team-you-badge">This is you</span>' : "") +
         '<div class="team-avatar" style="background:'+memberColor(m.id)+'">'+escapeHtml(initials(m.name))+"</div>" +
-        '<div class="team-role">'+escapeHtml(m.role)+"</div>" +
-        '<input class="team-name-input" data-id="'+m.id+'" value="'+escapeHtml(m.name)+'">' +
+        '<input class="team-role-input" data-id="'+m.id+'" data-field="role" value="'+escapeHtml(m.role)+'" placeholder="Title / role">' +
+        '<input class="team-name-input" data-id="'+m.id+'" data-field="name" value="'+escapeHtml(m.name)+'">' +
       "</div>";
     }).join("");
-    grid.querySelectorAll(".team-name-input").forEach(function(input){
+    grid.querySelectorAll(".team-name-input, .team-role-input").forEach(function(input){
       input.addEventListener("change", function(){
-        updateMemberName(input.dataset.id, input.value.trim() || memberName(input.dataset.id));
+        updateMemberField(input.dataset.id, input.dataset.field, input.value.trim());
       });
     });
   }
-  function updateMemberName(id, name){
-    var members = teamMembers().map(function(m){ return m.id===id ? Object.assign({}, m, {name:name}) : m; });
+  function updateMemberField(id, field, val){
+    if(!val){ var cur = memberById(id); val = cur ? cur[field] : ""; }
+    var members = teamMembers().map(function(m){
+      if(m.id!==id) return m;
+      var patch = {}; patch[field] = val;
+      return Object.assign({}, m, patch);
+    });
     state.team = { members: members };
     if(state.db){ state.db.doc("team/members").set(state.team).catch(function(){}); }
     else { renderAll(); }
@@ -1426,7 +1501,7 @@
     dashboard: { title:"Dashboard", sub:"This week at a glance, for the whole team." },
     meetings: { title:"Meetings", sub:"Notes and action items from your weekly syncs." },
     projects: { title:"Proposals", sub:"Every proposal in flight — client details, submission deadlines, and any extra to-dos, all in one place." },
-    team: { title:"Team", sub:"The five of you — names sync live for everyone." }
+    team: { title:"Team", sub:"" }
   };
   function setView(v){
     state.view = v;
@@ -1490,6 +1565,7 @@
 
   document.getElementById("filterMeetingWeek").addEventListener("change", function(){ state.filters.meetingWeek = this.value; renderMeetings(); });
   document.getElementById("filterMeetingClient").addEventListener("change", function(){ state.filters.meetingClient = this.value; renderMeetings(); });
+  document.getElementById("filterProjectOwner").addEventListener("change", function(){ state.filters.projectOwner = this.value; renderProjects(); });
   document.getElementById("clearExamplesMeetings").addEventListener("click", clearExampleMeetings);
 
   document.getElementById("addMeetingForm").addEventListener("submit", function(e){
