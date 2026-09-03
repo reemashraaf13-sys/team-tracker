@@ -1,0 +1,1664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tamaseh Tracker</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231F6F6B'/%3E%3Ctext x='50' y='68' font-size='58' font-family='Arial' font-weight='800' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F2F5F4;
+    --surface:#FFFFFF;
+    --surface-2:#E9EEEC;
+    --surface-3:#DEE6E3;
+    --border:#DAE2DF;
+    --border-strong:#C4CECA;
+    --text:#161F1D;
+    --text-muted:#5B6864;
+    --text-faint:#8B968F;
+    --accent:#1F6F6B;
+    --accent-strong:#144F4C;
+    --accent-soft:#DCEEEC;
+    --amber:#A8711F;
+    --amber-soft:#F3E6CE;
+    --red:#AE3C33;
+    --red-soft:#F5DEDB;
+    --green:#2E7D4F;
+    --green-soft:#DCEFE1;
+    --slate:#5B6864;
+    --slate-soft:#E7ECEA;
+    --shadow: 0 1px 2px rgba(20,30,28,0.06), 0 8px 24px -12px rgba(20,30,28,0.18);
+    --focus: 0 0 0 3px rgba(31,111,107,0.28);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E1513;
+      --surface:#161F1D;
+      --surface-2:#1C2725;
+      --surface-3:#243330;
+      --border:#2A3835;
+      --border-strong:#3A4B47;
+      --text:#E9EFED;
+      --text-muted:#9BAAA5;
+      --text-faint:#71827D;
+      --accent:#57C2BA;
+      --accent-strong:#8AD9D2;
+      --accent-soft:#1D3634;
+      --amber:#E3B15B;
+      --amber-soft:#3A2E17;
+      --red:#E48B82;
+      --red-soft:#3B211F;
+      --green:#7FCC9B;
+      --green-soft:#1C3527;
+      --slate:#9BAAA5;
+      --slate-soft:#233130;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.55);
+      --focus: 0 0 0 3px rgba(87,194,186,0.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0E1513;
+    --surface:#161F1D;
+    --surface-2:#1C2725;
+    --surface-3:#243330;
+    --border:#2A3835;
+    --border-strong:#3A4B47;
+    --text:#E9EFED;
+    --text-muted:#9BAAA5;
+    --text-faint:#71827D;
+    --accent:#57C2BA;
+    --accent-strong:#8AD9D2;
+    --accent-soft:#1D3634;
+    --amber:#E3B15B;
+    --amber-soft:#3A2E17;
+    --red:#E48B82;
+    --red-soft:#3B211F;
+    --green:#7FCC9B;
+    --green-soft:#1C3527;
+    --slate:#9BAAA5;
+    --slate-soft:#233130;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.55);
+    --focus: 0 0 0 3px rgba(87,194,186,0.35);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  [hidden]{ display:none !important; }
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size:14.5px;
+    line-height:1.45;
+  }
+  h1,h2,h3{ font-family:"Libre Franklin", "Source Sans 3", sans-serif; letter-spacing:-0.01em; margin:0; text-wrap:balance; }
+  .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums; }
+  button{ font-family:inherit; }
+  input,select,textarea{ font-family:inherit; font-size:inherit; color:inherit; }
+  ::selection{ background:var(--accent-soft); }
+
+  .setup-banner{
+    background:var(--amber-soft); color:var(--amber); border-bottom:1px solid var(--border);
+    padding:9px 20px; font-size:12.5px; font-weight:600; text-align:center;
+  }
+  .setup-banner strong{ font-weight:800; }
+  .app{ display:flex; min-height:100vh; }
+
+  /* ---------- Passkey gate ---------- */
+  .passkey-gate{ position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:200; padding:20px; }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:236px; flex:none; background:var(--surface); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; padding:20px 14px; gap:22px; position:sticky; top:0; height:100vh;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; padding:0 6px; }
+  .brand-mark{
+    width:34px; height:34px; border-radius:9px; background:linear-gradient(155deg, var(--accent), var(--accent-strong));
+    color:#fff; display:flex; align-items:center; justify-content:center; font-family:"Libre Franklin",sans-serif; font-weight:800; font-size:16px; flex:none;
+  }
+  .brand-name{ font-weight:800; font-size:16.5px; }
+  .brand-sub{ font-size:11.5px; color:var(--text-muted); margin-top:1px; }
+
+  .nav{ display:flex; flex-direction:column; gap:2px; }
+  .nav-item{
+    display:flex; align-items:center; gap:10px; text-align:left; border:none; background:transparent; color:var(--text-muted);
+    padding:9px 10px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:background .12s, color .12s;
+  }
+  .nav-item svg{ flex:none; opacity:.85; }
+  .nav-item:hover{ background:var(--surface-2); color:var(--text); }
+  .nav-item.active{ background:var(--accent-soft); color:var(--accent-strong); }
+  .nav-item .count{
+    margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--text-faint); background:var(--surface-2);
+    padding:1px 6px; border-radius:999px;
+  }
+  .nav-item.active .count{ color:var(--accent-strong); background:#fff2; }
+
+  .sidebar-foot{ margin-top:auto; display:flex; flex-direction:column; gap:12px; }
+  .presence-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-height:26px; padding:0 2px; }
+  .presence-dot{
+    width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:10.5px; font-weight:700; color:#fff; border:2px solid var(--surface); margin-left:-8px; flex:none;
+  }
+  .presence-dot:first-child{ margin-left:0; }
+  .presence-label{ font-size:11px; color:var(--text-faint); margin-left:4px; }
+
+  .whoami{
+    display:flex; align-items:center; gap:9px; border:1px solid var(--border); background:var(--surface-2);
+    border-radius:10px; padding:8px 10px; cursor:pointer; width:100%; text-align:left;
+  }
+  .whoami:hover{ border-color:var(--border-strong); }
+  .whoami-avatar{
+    width:26px; height:26px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:#fff;
+  }
+  .whoami-text{ display:flex; flex-direction:column; overflow:hidden; }
+  .whoami-name{ font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .whoami-hint{ font-size:10.5px; color:var(--text-faint); }
+
+  /* ---------- Main ---------- */
+  .main{ flex:1; min-width:0; padding:26px 32px 60px; max-width:1180px; }
+  .topbar{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:22px; flex-wrap:wrap; }
+  .topbar h1{ font-size:24px; font-weight:800; }
+  .topbar .muted{ margin:4px 0 0; color:var(--text-muted); font-size:13px; }
+
+  .week-nav{ display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:5px; box-shadow:var(--shadow); }
+  .week-nav button.arrow{
+    width:28px; height:28px; border-radius:7px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .week-nav button.arrow:hover{ background:var(--surface-2); color:var(--text); }
+  .week-display{ text-align:center; padding:0 8px; min-width:118px; }
+  .week-range{ display:block; font-weight:700; font-size:12.5px; }
+  .week-id{ display:block; font-size:10.5px; color:var(--text-faint); margin-top:1px; }
+  .week-today{
+    border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:5px 10px; font-size:12px; font-weight:600;
+    cursor:pointer; color:var(--text); margin-left:2px;
+  }
+  .week-today:hover{ background:var(--surface-3); }
+  .range-mode-toggle{ display:flex; gap:2px; margin-right:4px; }
+  .range-mode-toggle .toggle-chip{ padding:5px 10px; font-size:11px; }
+
+  .view{ display:flex; flex-direction:column; gap:20px; }
+
+  /* ---------- Cards / tiles ---------- */
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); }
+  .card-pad{ padding:18px 20px; }
+  .card-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 20px 0; }
+  .card-head h2{ font-size:14.5px; font-weight:700; }
+  .card-head .muted{ color:var(--text-muted); font-size:12px; }
+
+  .tiles{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .tile{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); }
+  .tile-label{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); }
+  .tile-value{ font-family:"Libre Franklin",sans-serif; font-size:30px; font-weight:800; margin-top:6px; }
+  .tile.accent .tile-value{ color:var(--accent-strong); }
+  .tile.warn .tile-value{ color:var(--amber); }
+  .tile.danger .tile-value{ color:var(--red); }
+  .tile.good .tile-value{ color:var(--green); }
+  .tile-sub{ font-size:11.5px; color:var(--text-faint); margin-top:4px; }
+
+  .two-col{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
+
+  .mini-list{ display:flex; flex-direction:column; }
+  .mini-row{ display:flex; align-items:center; gap:10px; padding:10px 20px; border-top:1px solid var(--border); font-size:13px; }
+  .mini-row:first-child{ border-top:none; }
+  .mini-title{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+  .mini-empty{ padding:22px 20px; color:var(--text-faint); font-size:13px; text-align:center; }
+
+  /* ---------- Pills / badges ---------- */
+  .pill{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .pill-dot{ width:6px; height:6px; border-radius:50%; flex:none; }
+  .pill.status-notstarted{ background:var(--slate-soft); color:var(--slate); }
+  .pill.status-inprogress{ background:var(--accent-soft); color:var(--accent-strong); }
+  .pill.status-blocked{ background:var(--amber-soft); color:var(--amber); }
+  .pill.status-done{ background:var(--green-soft); color:var(--green); }
+  .pill.overdue{ background:var(--red-soft); color:var(--red); }
+  .pill.example{ background:var(--surface-2); color:var(--text-faint); border:1px dashed var(--border-strong); }
+  .pill.pstatus-active{ background:var(--accent-soft); color:var(--accent-strong); }
+  .pill.pstatus-submitted{ background:var(--amber-soft); color:var(--amber); }
+  .pill.pstatus-closed{ background:var(--slate-soft); color:var(--slate); }
+  .project-tag{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:var(--accent-strong); background:var(--accent-soft); border-radius:6px; padding:2px 8px; }
+
+  select.pill-select{
+    appearance:none; -webkit-appearance:none; border:none; cursor:pointer; padding:4px 22px 4px 10px; border-radius:999px;
+    font-size:11.5px; font-weight:700; background-repeat:no-repeat; background-position:right 7px center; background-size:9px;
+  }
+  select.status-notstarted{ background-color:var(--slate-soft); color:var(--slate); }
+  select.status-inprogress{ background-color:var(--accent-soft); color:var(--accent-strong); }
+  select.status-blocked{ background-color:var(--amber-soft); color:var(--amber); }
+  select.status-done{ background-color:var(--green-soft); color:var(--green); }
+  select.pstatus-active{ background-color:var(--accent-soft); color:var(--accent-strong); }
+  select.pstatus-submitted{ background-color:var(--amber-soft); color:var(--amber); }
+  select.pstatus-closed{ background-color:var(--slate-soft); color:var(--slate); }
+
+  /* ---------- Filter bar ---------- */
+  .filter-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .filter-bar select, .filter-bar input[type="text"]{
+    border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; padding:7px 10px; font-size:12.5px;
+  }
+  .filter-bar select:focus, .filter-bar input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); }
+  .btn{
+    border:1px solid var(--border-strong); background:var(--surface); color:var(--text); border-radius:8px; padding:7px 13px;
+    font-size:12.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+  }
+  .btn:hover{ background:var(--surface-2); }
+  .btn-primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn-primary:hover{ background:var(--accent-strong); border-color:var(--accent-strong); }
+  .btn-ghost{ border-color:transparent; background:transparent; color:var(--text-muted); }
+  .btn-ghost:hover{ background:var(--surface-2); color:var(--text); }
+  .spacer{ flex:1; }
+  .toggle-chip{
+    border:1px solid var(--border); background:var(--surface); color:var(--text-muted); border-radius:999px; padding:6px 12px;
+    font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .toggle-chip.on{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); }
+
+  /* ---------- Add-row form ---------- */
+  .add-form{ display:flex; flex-wrap:wrap; gap:8px; padding:14px 20px; background:var(--surface-2); border-bottom:1px solid var(--border); border-radius:14px 14px 0 0; }
+  .add-form input[type="text"], .add-form input[type="date"], .add-form input[type="time"], .add-form select, .add-form textarea{
+    border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; padding:8px 10px; font-size:13px;
+  }
+  .add-form input[type="text"]:focus, .add-form select:focus, .add-form textarea:focus, .add-form input[type="date"]:focus, .add-form input[type="time"]:focus{
+    outline:none; border-color:var(--accent); box-shadow:var(--focus);
+  }
+  .add-form .task-title{ flex:1 1 220px; }
+  .add-form .task-notes{ flex:1 1 100%; min-height:44px; resize:vertical; }
+
+  .task-title-text{ font-weight:600; outline:none; border-radius:5px; padding:2px 4px; margin:-2px -4px; }
+  .task-title-text:focus{ background:var(--surface-2); box-shadow:var(--focus); }
+  input.deadline-input{ border:1px solid transparent; background:transparent; color:var(--text); font-size:12.5px; border-radius:6px; padding:3px 5px; font-family:"IBM Plex Mono",monospace; }
+  input.deadline-input:hover{ background:var(--surface-2); border-color:var(--border); }
+  .icon-btn{ border:none; background:transparent; color:var(--text-faint); cursor:pointer; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .icon-btn:hover{ background:var(--red-soft); color:var(--red); }
+  .empty-state{ padding:40px 20px; text-align:center; color:var(--text-faint); }
+  .empty-state strong{ display:block; color:var(--text-muted); font-size:14px; margin-bottom:4px; }
+
+  /* ---------- Owner picker (multi-select chips) ---------- */
+  .owner-picker{ display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+  .mini-chip{
+    width:24px; height:24px; border-radius:50%; border:1.5px solid var(--border); background:var(--surface);
+    color:var(--text-faint); font-size:9.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    padding:0; flex:none; transition:transform .08s;
+  }
+  .mini-chip:hover{ transform:scale(1.1); border-color:var(--border-strong); }
+  .mini-chip.on{ color:#fff; border-color:transparent; }
+
+  /* ---------- Meetings ---------- */
+  .meeting-list{ display:flex; flex-direction:column; gap:12px; }
+  .meeting-card{ padding:16px 18px; }
+  .meeting-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .meeting-title{ font-weight:700; font-size:14.5px; outline:none; border-radius:5px; }
+  .meeting-title:focus{ background:var(--surface-2); box-shadow:var(--focus); }
+  .meeting-meta{ display:flex; align-items:center; gap:10px; margin-top:4px; font-size:12px; color:var(--text-muted); flex-wrap:wrap; }
+  .meeting-meta .mono{ color:var(--text-faint); }
+  .attendee-dots{ display:flex; }
+  .attendee-dots .presence-dot{ width:20px; height:20px; font-size:9px; }
+  .meeting-notes-text{
+    margin-top:10px; width:100%; min-height:70px; resize:vertical; font-size:13px; color:var(--text);
+    border:1px solid var(--border); border-radius:8px; padding:8px 10px; background:var(--surface-2); font-family:inherit; line-height:1.5;
+  }
+  .meeting-notes-text:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
+  .action-items{ margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+  .action-item{ display:flex; align-items:center; gap:8px; font-size:12.5px; }
+  .action-item input[type="checkbox"]{ accent-color:var(--accent); width:14px; height:14px; flex:none; }
+  .action-item .ai-text{ flex:1; outline:none; }
+  .action-item.done .ai-text{ text-decoration:line-through; color:var(--text-faint); }
+  .action-item .btn{ padding:3px 8px; font-size:10.5px; }
+  .add-action-item{ display:flex; gap:6px; margin-top:8px; }
+  .add-action-item input{ flex:1; border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; }
+
+  /* ---------- Proposals (merged with tasks) ---------- */
+  .proposal-card{ padding:16px 18px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:10px; }
+  .proposal-card:first-child{ border-top:none; }
+  .proposal-top{ display:flex; align-items:center; gap:10px; }
+  .project-name-input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:13.5px; font-weight:700; width:100%; }
+  .project-name-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
+  .proposal-top .project-name-input{ flex:1 1 240px; }
+  .proposal-meta-grid{ display:grid; grid-template-columns:repeat(4,1fr) auto; gap:8px; }
+  .proposal-meta-grid input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; width:100%; }
+  .proposal-meta-grid input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
+  .proposal-meta-grid label.submit-by{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-faint); white-space:nowrap; }
+  .proposal-meta-grid label.submit-by input{ width:130px; }
+  .proposal-owners-row{ display:flex; align-items:center; gap:8px; }
+  .proposal-tasks{ background:var(--surface-2); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
+  .proposal-task-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
+  .proposal-task-row .task-title-text{ flex:1 1 160px; min-width:0; }
+  .add-task-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:4px 2px; }
+  .add-task-row input[type="text"]{ flex:1 1 200px; border:1px solid var(--border); background:var(--surface); border-radius:7px; padding:7px 9px; font-size:12.5px; }
+  .add-task-row input[type="date"]{ border:1px solid var(--border); background:var(--surface); border-radius:7px; padding:6px 8px; font-size:12px; }
+  .add-task-row input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); }
+  .proposal-tasks-empty{ font-size:12px; color:var(--text-faint); padding:4px 2px; }
+
+  /* ---------- Proposal pipeline table (dashboard) ---------- */
+  .pipeline-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:760px; }
+  .pipeline-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint); font-weight:700; padding:0 10px 8px; white-space:nowrap; }
+  .pipeline-table td{ padding:9px 10px; border-top:1px solid var(--border); vertical-align:middle; }
+  .pipeline-table tr:first-child td{ border-top:none; }
+  .pipeline-table td.pt-name{ font-weight:700; }
+  .pipeline-table td.pt-muted{ color:var(--text-faint); }
+  .pipeline-table tr.overdue td.pt-deadline{ color:var(--red); font-weight:700; }
+
+  /* ---------- Team snapshot (dashboard) ---------- */
+  .person-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:14px 20px 20px; }
+  .person-card{ border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:var(--surface-2); display:flex; flex-direction:column; gap:10px; }
+  .person-card.wide{ grid-column:1 / -1; }
+  .person-card-head{ display:flex; align-items:center; gap:8px; }
+  .person-card-name{ font-weight:700; font-size:13px; }
+  .person-card-role{ font-size:10.5px; color:var(--text-faint); }
+  .person-sections{ display:flex; flex-direction:column; }
+  .person-card.wide .person-sections{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .person-section{ display:flex; flex-direction:column; gap:4px; padding-top:8px; border-top:1px solid var(--border); }
+  .person-section:first-of-type{ padding-top:0; border-top:none; }
+  .person-card.wide .person-section{ padding-top:0; border-top:none; }
+  .person-card.wide .person-section:last-child{ border-left:1px solid var(--border); padding-left:18px; }
+  .person-section-label{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); margin-bottom:2px; }
+  .person-row{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-muted); }
+  .person-row-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+  .person-row.overdue .person-row-title{ color:var(--red); font-weight:600; }
+  .person-row.muted{ color:var(--text-faint); font-style:italic; }
+  .person-empty{ font-size:11.5px; color:var(--text-faint); font-style:italic; }
+  .person-foot{ font-size:11px; color:var(--text-faint); margin-top:auto; padding-top:8px; border-top:1px solid var(--border); }
+  @media (max-width: 700px){
+    .person-grid{ grid-template-columns:1fr; }
+    .person-card.wide .person-sections{ grid-template-columns:1fr; }
+    .person-card.wide .person-section:last-child{ border-left:none; padding-left:0; border-top:1px solid var(--border); padding-top:8px; }
+  }
+
+  /* ---------- Team ---------- */
+  .team-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+  .team-card{ padding:16px 18px; display:flex; flex-direction:column; gap:10px; }
+  .team-avatar{ width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; font-size:16px; }
+  .team-role{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); font-weight:700; }
+  .team-role-input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:5px 9px; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; font-weight:700; color:var(--text-faint); width:100%; }
+  .team-role-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); color:var(--text); }
+  .team-name-input{ border:1px solid var(--border); background:var(--surface-2); border-radius:8px; padding:8px 10px; font-size:14px; font-weight:600; width:100%; }
+  .team-name-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
+  .team-you-badge{ font-size:10.5px; font-weight:700; color:var(--accent-strong); background:var(--accent-soft); border-radius:999px; padding:2px 8px; align-self:flex-start; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(10,15,14,0.5); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; }
+  .modal{ background:var(--surface); border-radius:16px; border:1px solid var(--border); width:100%; max-width:380px; padding:22px; box-shadow:var(--shadow); }
+  .modal h2{ font-size:17px; margin-bottom:4px; }
+  .modal p.muted{ color:var(--text-muted); font-size:12.5px; margin:0 0 16px; }
+  .modal-options{ display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; }
+  .modal-option{ display:flex; align-items:center; gap:10px; border:1px solid var(--border); border-radius:10px; padding:9px 11px; cursor:pointer; background:var(--surface); text-align:left; width:100%; }
+  .modal-option:hover{ border-color:var(--accent); background:var(--accent-soft); }
+  .modal-option .team-avatar{ width:30px; height:30px; font-size:12px; border-radius:9px; }
+  .modal-close{ margin-top:14px; text-align:center; }
+
+  @media (max-width: 900px){
+    .app{ flex-direction:column; }
+    .sidebar{ width:100%; height:auto; position:relative; flex-direction:row; align-items:center; padding:12px 16px; gap:16px; }
+    .nav{ flex-direction:row; overflow-x:auto; }
+    .sidebar-foot{ margin-top:0; flex-direction:row; margin-left:auto; }
+    .presence-row{ display:none; }
+    .main{ padding:18px 16px 40px; }
+    .tiles{ grid-template-columns:repeat(2,1fr); }
+    .two-col{ grid-template-columns:1fr; }
+    .proposal-meta-grid{ grid-template-columns:1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="passkeyGate" class="passkey-gate">
+  <div class="modal">
+    <h2>Tamaseh Tracker</h2>
+    <p class="muted">Enter the team passkey to continue.</p>
+    <form id="passkeyForm" style="display:flex; flex-direction:column; gap:10px;">
+      <input type="password" id="passkeyInput" placeholder="Passkey" autofocus required
+        style="border:1px solid var(--border); background:var(--surface-2); border-radius:8px; padding:10px 12px; font-size:14px; color:var(--text);">
+      <button type="submit" class="btn btn-primary" style="justify-content:center;">Enter</button>
+      <div id="passkeyError" style="color:var(--red); font-size:12px; height:14px; text-align:center;">&nbsp;</div>
+    </form>
+  </div>
+</div>
+
+<div id="setupBanner" class="setup-banner" hidden>
+  <strong>Firebase isn't connected yet.</strong>&nbsp;You're viewing a local preview with example data — nothing you enter here will be shared or saved. Follow the setup guide to go live for the team.
+</div>
+<div class="app" id="appRoot" hidden>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">T</div>
+      <div>
+        <div class="brand-name">Tamaseh Tracker</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <button class="nav-item active" data-view="dashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-view="projects">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+        Proposals
+        <span class="count" id="navCountProjects">0</span>
+      </button>
+      <button class="nav-item" data-view="meetings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        Meetings
+        <span class="count" id="navCountMeetings">0</span>
+      </button>
+      <button class="nav-item" data-view="team">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="18" cy="8.5" r="2.4"/><path d="M16.3 14.2c2.7.4 4.7 2.4 4.7 5.3"/></svg>
+        Team
+      </button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="presence-row" id="presenceRow"></div>
+      <button class="whoami" id="whoamiBtn">
+        <span class="whoami-avatar" id="whoamiAvatar">?</span>
+        <span class="whoami-text">
+          <span class="whoami-name" id="whoamiName">Set your name</span>
+          <span class="whoami-hint">tap to change</span>
+        </span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="viewTitle">Dashboard</h1>
+        <p class="muted" id="viewSubtitle">This week at a glance, for the whole team.</p>
+      </div>
+      <div class="week-nav">
+        <div class="range-mode-toggle" id="rangeModeToggle">
+          <button type="button" class="toggle-chip on" data-mode="week">Week</button>
+          <button type="button" class="toggle-chip" data-mode="month">Month</button>
+          <button type="button" class="toggle-chip" data-mode="year">Year</button>
+        </div>
+        <button class="arrow" id="rangePrev" title="Previous">‹</button>
+        <div class="week-display">
+          <span class="week-range mono" id="weekRange">–</span>
+          <span class="week-id mono" id="weekIdLabel">–</span>
+        </div>
+        <button class="arrow" id="rangeNext" title="Next">›</button>
+        <button class="week-today" id="rangeToday">Today</button>
+      </div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section class="view" id="view-dashboard">
+      <div class="tiles">
+        <div class="tile accent"><div class="tile-label">Due</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
+        <div class="tile good"><div class="tile-label">Completed</div><div class="tile-value" id="statDone">0</div><div class="tile-sub" id="statDoneSub">&nbsp;</div></div>
+        <div class="tile danger"><div class="tile-label">Overdue</div><div class="tile-value" id="statOverdue">0</div><div class="tile-sub" id="statOverdueSub">&nbsp;</div></div>
+        <div class="tile warn"><div class="tile-label">Meetings</div><div class="tile-value" id="statMeetings">0</div><div class="tile-sub" id="statMeetingsSub">&nbsp;</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Proposal pipeline</h2><span class="muted" id="pipelineCount"></span></div>
+        <div style="overflow-x:auto; padding:14px 20px 18px;">
+          <table class="pipeline-table" id="pipelineTable">
+            <thead>
+              <tr><th>Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Submit by</th><th>Owners</th></tr>
+            </thead>
+            <tbody id="pipelineTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Team snapshot</h2><span class="muted" id="personSnapshotLabel"></span></div>
+        <div class="person-grid" id="personGrid"></div>
+      </div>
+    </section>
+
+    <!-- MEETINGS -->
+    <section class="view" id="view-meetings" hidden>
+      <div class="filter-bar">
+        <select id="filterMeetingClient"><option value="all">All clients</option></select>
+        <select id="filterMeetingWeek"><option value="all">All weeks</option></select>
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" id="clearExamplesMeetings">Clear examples</button>
+      </div>
+
+      <div class="card card-pad">
+        <form id="addMeetingForm" style="display:flex; flex-direction:column; gap:10px;">
+          <div class="add-form" style="padding:0; background:none; border:none;">
+            <input type="text" id="newMeetingTitle" class="task-title" placeholder="Meeting title — e.g. Weekly team sync" required>
+            <input type="text" id="newMeetingClient" list="clientSuggestions" placeholder="Client (optional) — e.g. Al Rajhi Takaful">
+            <datalist id="clientSuggestions"></datalist>
+            <input type="date" id="newMeetingDate" required>
+            <input type="time" id="newMeetingTime" value="10:00" title="Start time">
+            <input type="time" id="newMeetingEndTime" value="11:00" title="End time">
+            <button type="submit" class="btn btn-primary">Add meeting</button>
+          </div>
+          <div id="newMeetingAttendees" class="filter-bar"></div>
+          <textarea id="newMeetingNotes" class="task-notes" placeholder="Notes (optional) — paste as bullet points, one per line" style="width:100%; min-height:60px;"></textarea>
+        </form>
+      </div>
+
+      <div class="meeting-list" id="meetingsList"></div>
+      <div class="empty-state" id="meetingsEmpty" hidden><strong>No meetings yet</strong>Add your first one above.</div>
+    </section>
+
+    <!-- PROPOSALS (merged with tasks) -->
+    <section class="view" id="view-projects" hidden>
+      <div class="card card-pad">
+        <form id="addProjectForm" class="add-form" style="padding:0; background:none; border:none;">
+          <input type="text" class="task-title" id="newProjectName" placeholder="Proposal name — e.g. Al Rajhi Takaful Leadership Program" required>
+          <input type="text" id="newProjectClient" placeholder="Client *" required style="width:150px;">
+          <input type="text" id="newProjectBd" placeholder="BD" style="width:120px;">
+          <input type="text" id="newProjectLanguage" placeholder="Language" style="width:110px;">
+          <input type="text" id="newProjectCountry" placeholder="Country" style="width:110px;">
+          <input type="date" id="newProjectSubmitBy" title="Submit by">
+          <select id="newProjectStatus">
+            <option value="Active" selected>Active</option>
+            <option value="Submitted">Submitted</option>
+            <option value="Closed">Closed</option>
+          </select>
+          <button type="submit" class="btn btn-primary">Add proposal</button>
+          <div style="flex:1 1 100%; display:flex; align-items:center; gap:8px;">
+            <span class="muted" style="font-size:11.5px;">Owners:</span>
+            <div class="owner-picker" id="newProjectOwners"></div>
+          </div>
+        </form>
+      </div>
+      <div class="filter-bar" style="margin:2px 2px 0;">
+        <span class="muted" style="font-size:12px;">Filter:</span>
+        <select id="filterProjectOwner"><option value="all">All people</option></select>
+      </div>
+      <div class="card" id="projectsListCard">
+        <div id="projectsList"></div>
+      </div>
+      <div class="empty-state" id="projectsEmpty" hidden><strong>No proposals yet</strong>Add your first one above.</div>
+    </section>
+
+    <!-- TEAM -->
+    <section class="view" id="view-team" hidden>
+      <div class="team-grid" id="teamGrid"></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-overlay" id="whoamiModal" hidden>
+  <div class="modal">
+    <h2>Who are you?</h2>
+    <p class="muted">Pick your name so your tasks, notes and updates are attributed correctly.</p>
+    <div class="modal-options" id="whoamiOptions"></div>
+    <div class="modal-close"><button class="btn btn-ghost" id="whoamiCancel">Not now</button></div>
+  </div>
+</div>
+
+<!--
+  ============================================================
+  STEP 1 — Firebase setup: paste your project's config below.
+  See the setup guide for exactly where to find these values
+  (Firebase Console → Project settings → Your apps → SDK setup
+  and configuration → Config).
+  ============================================================
+-->
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyDxrf57FP5C8PgwFWlhgEYnKmAVYjog_pU",
+    authDomain: "tamaseh-weekly-tracker-21533.firebaseapp.com",
+    projectId: "tamaseh-weekly-tracker-21533",
+    storageBucket: "tamaseh-weekly-tracker-21533.firebasestorage.app",
+    messagingSenderId: "1095226218947",
+    appId: "1:1095226218947:web:8ca01ba6960f92e6a78576"
+  };
+</script>
+
+<!-- Firebase SDK (compat build — simplest for a plain HTML page, no build tools needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- date/time helpers ---------------- */
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function isoDate(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+  function parseISODate(s){ if(!s) return null; var p=s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function startOfWeek(d){ var nd=new Date(d.getFullYear(), d.getMonth(), d.getDate()); nd.setDate(nd.getDate()-nd.getDay()); return nd; }
+  function endOfWeek(d){ var s=startOfWeek(d); var e=new Date(s); e.setDate(e.getDate()+4); return e; }
+  function isoWeekId(d){
+    var dt=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    var dayNum = dt.getUTCDay() || 7;
+    dt.setUTCDate(dt.getUTCDate()+4-dayNum);
+    var yearStart = new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+    var weekNo = Math.ceil((((dt-yearStart)/86400000)+1)/7);
+    return dt.getUTCFullYear()+"-W"+pad2(weekNo);
+  }
+  function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+  function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+  function startOfYear(d){ return new Date(d.getFullYear(), 0, 1); }
+  function endOfYear(d){ return new Date(d.getFullYear(), 11, 31); }
+  function addDays(d,n){ var nd=new Date(d); nd.setDate(nd.getDate()+n); return nd; }
+  function addMonths(d,n){ return new Date(d.getFullYear(), d.getMonth()+n, 1); }
+  function addYears(d,n){ return new Date(d.getFullYear()+n, d.getMonth(), 1); }
+  function todayStr(){ return isoDate(new Date()); }
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function uid(){ return "local-"+Math.random().toString(36).slice(2)+Date.now().toString(36); }
+
+  function computeRange(mode, refDate){
+    var fmtMD=function(x){ return x.toLocaleDateString(undefined,{month:"short",day:"numeric"}); };
+    if(mode==="month"){
+      var s=startOfMonth(refDate), e=endOfMonth(refDate);
+      return { start:s, end:e, id: refDate.getFullYear()+"-"+pad2(refDate.getMonth()+1), label: refDate.toLocaleDateString(undefined,{month:"long", year:"numeric"}) };
+    }
+    if(mode==="year"){
+      var sy=startOfYear(refDate), ey=endOfYear(refDate);
+      return { start:sy, end:ey, id:String(refDate.getFullYear()), label:String(refDate.getFullYear()) };
+    }
+    var sw=startOfWeek(refDate), ew=endOfWeek(refDate);
+    return { start:sw, end:ew, id:isoWeekId(refDate), label: fmtMD(sw)+" – "+fmtMD(ew) };
+  }
+  function dateInRange(dateStr, range){
+    var d = parseISODate(dateStr);
+    if(!d) return false;
+    return d >= range.start && d <= range.end;
+  }
+  function timeToMinutes(t){ if(!t) return null; var p=String(t).split(":"); if(p.length<2) return null; return (+p[0])*60+(+p[1]); }
+  function meetingDurationHours(m){
+    var s=timeToMinutes(m.time), e=timeToMinutes(m.endTime);
+    if(s==null || e==null) return 0;
+    var diff = e-s;
+    if(diff<0) diff = 0;
+    return diff/60;
+  }
+  function fmtHours(h){
+    if(!h) return "0h";
+    var rounded = Math.round(h*10)/10;
+    return rounded+"h";
+  }
+
+  var MEMBER_COLORS = { joe:"#1F6F6B", reem:"#3E6FB0", oreo:"#8A5CB5", amro:"#B8862E", omar:"#B0507E" };
+  function memberColor(id){ return MEMBER_COLORS[id] || "#5B6864"; }
+  function initials(name){
+    if(!name) return "?";
+    var parts=name.trim().split(/\s+/).filter(Boolean);
+    if(parts.length===0) return "?";
+    if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+    return (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+  }
+
+  var DEFAULT_TEAM = { members: [
+    { id:"joe", role:"Associate Director", name:"Joe" },
+    { id:"reem", role:"Senior Manager", name:"Reem" },
+    { id:"oreo", role:"Senior Manager", name:"Oreo" },
+    { id:"amro", role:"Manager", name:"Amro" },
+    { id:"omar", role:"Manager", name:"Omar" }
+  ]};
+
+  function statusClass(s){ return "status-"+String(s||"Not Started").toLowerCase().replace(/\s+/g,""); }
+  function pstatusClass(s){ return "pstatus-"+String(s||"Active").toLowerCase(); }
+
+  var GENERAL_PROJECT = { id:"general", name:"Other tasks", client:"", status:"Active" };
+
+  /* ---------------- state ---------------- */
+  var state = {
+    view: "dashboard",
+    db: null,
+    team: null,
+    projects: [],
+    tasks: [],
+    meetings: [],
+    me: localStorage_get("cadence.me"),
+    rangeMode: "week",
+    refDate: new Date(),
+    currentRange: null,
+    filters: { meetingWeek:"all", meetingClient:"all", projectOwner:"all" },
+    peers: []
+  };
+
+  function localStorage_get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function localStorage_set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+  state.currentRange = computeRange(state.rangeMode, state.refDate);
+
+  function teamMembers(){ return (state.team && state.team.members) || DEFAULT_TEAM.members; }
+  function memberById(id){ return teamMembers().find(function(m){ return m.id===id; }); }
+  function memberName(id){ var m=memberById(id); return m ? m.name : "Unassigned"; }
+
+  function projectsList(){ return [GENERAL_PROJECT].concat(state.projects); }
+  function activeProjectsList(){ return state.projects.filter(function(p){ return p.status!=="Closed"; }); }
+  function projectById(id){ return projectsList().find(function(p){ return p.id===id; }) || GENERAL_PROJECT; }
+  function projectLabel(id){ return projectById(id).name; }
+
+  function taskOwners(t){ return t.owners || (t.owner ? [t.owner] : []); }
+  function proposalOwners(p){ return p.owners || (p.owner ? [p.owner] : []); }
+  function ownerDotsHtml(ids){
+    if(!ids || !ids.length) return '<span class="muted" style="font-size:11px;">Unassigned</span>';
+    return '<div class="attendee-dots">' + ids.map(function(id){
+      return '<span class="presence-dot" style="background:'+memberColor(id)+'" title="'+escapeHtml(memberName(id))+'">'+escapeHtml(initials(memberName(id)))+"</span>";
+    }).join("") + "</div>";
+  }
+
+  function isOverdue(task){
+    return !!task.deadline && task.deadline < todayStr() && task.status !== "Done";
+  }
+  function isProposalOverdue(p){
+    return !!p.submitBy && p.submitBy < todayStr() && p.status !== "Closed" && p.status !== "Submitted";
+  }
+
+  /* ---------------- firebase bootstrap ---------------- */
+  var FIREBASE_CONFIGURED = (typeof firebaseConfig !== "undefined") && firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("PASTE") === -1;
+  var presenceTimer = null;
+
+  var SEED_PROJECTS = [
+    { key:"p1", name:"Al Rajhi Takaful — Leadership Development", client:"Al Rajhi Takaful", bd:"", language:"English", country:"Saudi Arabia", submitBy:"", owners:["reem"], status:"Active" },
+    { key:"p2", name:"ELM AI Value Accelerator", client:"ELM", bd:"", language:"English", country:"Saudi Arabia", submitBy:"", owners:["omar"], status:"Active" },
+    { key:"p3", name:"Durham Faculty Profiles", client:"Durham University Business School", bd:"", language:"English", country:"United Kingdom", submitBy:"", owners:["amro"], status:"Submitted" }
+  ];
+
+  function seedLocalDemo(){
+    state.team = JSON.parse(JSON.stringify(DEFAULT_TEAM));
+    var today = new Date();
+    state.projects = SEED_PROJECTS.map(function(p){ return Object.assign({}, p, { id:p.key, example:true }); });
+    state.tasks = [
+      { id: uid(), title:"Example — Review proposal deck", project:"p1", owners:["reem"], status:"In Progress", deadline:isoDate(addDays(today,2)), notes:"Sample task — edit or delete me.", example:true },
+      { id: uid(), title:"Example — Send faculty bios to contact", project:"p3", owners:["amro"], status:"Not Started", deadline:isoDate(addDays(today,-1)), notes:"Overdue example, shown in red.", example:true },
+      { id: uid(), title:"Example — Finalize methodology slide", project:"p2", owners:["omar"], status:"Done", deadline:isoDate(addDays(today,-3)), notes:"", example:true }
+    ];
+    state.meetings = [
+      { id: uid(), title:"Example — Weekly sync", client:"", date:isoDate(today), time:"10:00", endTime:"11:00", attendees:["joe","reem","oreo","amro","omar"], notes:"- Review pipeline\n- Blockers\n- This week's deadlines", actionItems:[{text:"Confirm proposal timelines", done:false}], example:true }
+    ];
+  }
+
+  function ensureSeedExamples(){
+    if(!state.db) return;
+    var initRef = state.db.doc("meta/init");
+    initRef.get().then(function(snap){
+      if(snap.exists) return;
+      return initRef.set({ seeded:true, at: Date.now() }).then(function(){
+        var pc = state.db.collection("projects");
+        return Promise.all(SEED_PROJECTS.map(function(p){
+          return pc.doc(p.key).set({ name:p.name, client:p.client, bd:p.bd, language:p.language, country:p.country, submitBy:p.submitBy, owners:p.owners, status:p.status, example:true, createdAt:Date.now() });
+        }));
+      }).then(function(){
+        var today = new Date();
+        var tc = state.db.collection("tasks");
+        var mc = state.db.collection("meetings");
+        return Promise.all([
+          tc.add({ title:"Example — Review proposal deck", project:"p1", owners:["reem"], status:"In Progress", deadline:isoDate(addDays(today,2)), notes:"Sample task — edit or delete me.", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
+          tc.add({ title:"Example — Send faculty bios to contact", project:"p3", owners:["amro"], status:"Not Started", deadline:isoDate(addDays(today,-1)), notes:"Overdue example, shown in red.", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
+          tc.add({ title:"Example — Finalize methodology slide", project:"p2", owners:["omar"], status:"Done", deadline:isoDate(addDays(today,-3)), notes:"", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
+          mc.add({ title:"Example — Weekly sync", client:"", date:isoDate(today), time:"10:00", endTime:"11:00", attendees:["joe","reem","oreo","amro","omar"], notes:"- Review pipeline\n- Blockers\n- This week's deadlines", actionItems:[{text:"Confirm proposal timelines", done:false}], example:true, createdBy:"system", createdAt:Date.now() })
+        ]);
+      });
+    }).catch(function(e){ console.warn("seed skipped", e); });
+  }
+
+  function showSetupBanner(){
+    var b = document.getElementById("setupBanner");
+    if(b) b.hidden = false;
+  }
+
+  function initCapabilities(){
+    if(!FIREBASE_CONFIGURED){
+      showSetupBanner();
+      seedLocalDemo();
+      renderAll();
+      renderWhoami();
+      return;
+    }
+    try{
+      firebase.initializeApp(firebaseConfig);
+      state.db = firebase.firestore();
+    }catch(e){
+      console.warn("Firebase init failed", e);
+      showSetupBanner();
+      seedLocalDemo();
+      renderAll();
+      renderWhoami();
+      return;
+    }
+
+    state.db.collection("tasks").onSnapshot(function(snap){
+      state.tasks = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderAll();
+    }, function(e){ console.warn("tasks error", e); showSetupBanner(); });
+
+    state.db.collection("meetings").onSnapshot(function(snap){
+      state.meetings = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderAll();
+    }, function(e){ console.warn("meetings error", e); });
+
+    state.db.collection("projects").onSnapshot(function(snap){
+      state.projects = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderAll();
+    }, function(e){ console.warn("projects error", e); });
+
+    state.db.doc("team/members").onSnapshot(function(snap){
+      if(snap.exists){
+        state.team = snap.data();
+      } else if(!state.team){
+        state.team = JSON.parse(JSON.stringify(DEFAULT_TEAM));
+        state.db.doc("team/members").set(state.team).catch(function(){});
+      }
+      renderAll();
+    }, function(e){ console.warn("team error", e); });
+
+    state.db.collection("presence").onSnapshot(function(snap){
+      var now = Date.now();
+      state.peers = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); })
+        .filter(function(p){ return p.lastSeen && (now - p.lastSeen) < 45000; });
+      renderPresence();
+    }, function(e){ console.warn("presence error", e); });
+
+    ensureSeedExamples();
+    if(state.me) startPresenceHeartbeat();
+    renderWhoami();
+  }
+
+  function pushPresence(){
+    if(!state.db || !state.me) return;
+    var m = memberById(state.me);
+    state.db.collection("presence").doc(state.me).set({
+      name: m ? m.name : state.me,
+      color: memberColor(state.me),
+      lastSeen: Date.now()
+    }).catch(function(){});
+  }
+
+  function startPresenceHeartbeat(){
+    pushPresence();
+    if(presenceTimer) clearInterval(presenceTimer);
+    presenceTimer = setInterval(pushPresence, 20000);
+  }
+
+  /* ---------------- rendering: shell ---------------- */
+  function renderAll(){
+    renderNavCounts();
+    renderRangeNav();
+    renderTeam();
+    renderWhoamiOwnerLists();
+    renderDashboard();
+    renderProjects();
+    renderMeetings();
+    renderWhoami();
+  }
+
+  function renderNavCounts(){
+    document.getElementById("navCountMeetings").textContent = state.meetings.length;
+    document.getElementById("navCountProjects").textContent = activeProjectsList().length;
+  }
+
+  function renderRangeNav(){
+    document.getElementById("weekRange").textContent = state.currentRange.label;
+    document.getElementById("weekIdLabel").textContent = state.currentRange.id;
+  }
+
+  function renderPresence(){
+    var row = document.getElementById("presenceRow");
+    var peers = state.peers||[];
+    if(!peers.length){ row.innerHTML=""; return; }
+    var avatars = peers.map(function(p){
+      var isMe = p.id===state.me;
+      return '<span class="presence-dot" style="background:'+(p.color||"#5B6864")+'" title="'+escapeHtml(p.name||"Someone")+(isMe?" (you)":"")+'">'+escapeHtml(initials(p.name))+"</span>";
+    }).join("");
+    row.innerHTML = avatars + '<span class="presence-label">'+peers.length+" online</span>";
+  }
+
+  function renderWhoami(){
+    var m = state.me ? memberById(state.me) : null;
+    document.getElementById("whoamiAvatar").textContent = m ? initials(m.name) : "?";
+    document.getElementById("whoamiAvatar").style.background = m ? memberColor(m.id) : "#8B968F";
+    document.getElementById("whoamiName").textContent = m ? m.name : "Set your name";
+  }
+
+  /* ---------------- owner picker (multi-select chips) ---------------- */
+  function ownerChipsHtml(selectedIds){
+    selectedIds = selectedIds || [];
+    return teamMembers().map(function(m){
+      var on = selectedIds.indexOf(m.id) > -1;
+      return '<button type="button" class="mini-chip'+(on?" on":"")+'" data-id="'+m.id+'" '+
+        (on ? ('style="background:'+memberColor(m.id)+';border-color:'+memberColor(m.id)+';"') : "") +
+        ' title="'+escapeHtml(m.name)+'">'+escapeHtml(initials(m.name))+"</button>";
+    }).join("");
+  }
+  function wireOwnerPickerToggle(container, onChange){
+    container.querySelectorAll(".mini-chip").forEach(function(chip){
+      chip.addEventListener("click", function(){
+        var sel = JSON.parse(container.dataset.selected || "[]");
+        var idx = sel.indexOf(chip.dataset.id);
+        if(idx>-1) sel.splice(idx,1); else sel.push(chip.dataset.id);
+        container.dataset.selected = JSON.stringify(sel);
+        container.innerHTML = ownerChipsHtml(sel);
+        wireOwnerPickerToggle(container, onChange);
+        if(onChange) onChange(sel);
+      });
+    });
+  }
+
+  var pendingNewTaskOwners = {};
+
+  function renderWhoamiOwnerLists(){
+    var members = teamMembers();
+
+    var att = document.getElementById("newMeetingAttendees");
+    var attSelected = att.dataset.selected ? JSON.parse(att.dataset.selected) : members.map(function(m){ return m.id; });
+    att.innerHTML = '<span class="muted" style="font-size:11.5px; align-self:center;">Attendees:</span>' + members.map(function(m){
+      var on = attSelected.indexOf(m.id)>-1;
+      return '<label class="toggle-chip attendee-chip'+(on?" on":"")+'" data-id="'+m.id+'" style="cursor:pointer;">'+escapeHtml(m.name)+"</label>";
+    }).join("");
+    att.dataset.selected = JSON.stringify(attSelected);
+    att.querySelectorAll(".attendee-chip").forEach(function(chip){
+      chip.addEventListener("click", function(){
+        chip.classList.toggle("on");
+        var sel = JSON.parse(att.dataset.selected || "[]");
+        var id = chip.dataset.id, idx = sel.indexOf(id);
+        if(chip.classList.contains("on")){ if(idx===-1) sel.push(id); }
+        else { if(idx>-1) sel.splice(idx,1); }
+        att.dataset.selected = JSON.stringify(sel);
+      });
+    });
+
+    var npOwners = document.getElementById("newProjectOwners");
+    var npSelected = npOwners.dataset.selected ? JSON.parse(npOwners.dataset.selected) : (state.me ? [state.me] : []);
+    npOwners.dataset.selected = JSON.stringify(npSelected);
+    npOwners.innerHTML = ownerChipsHtml(npSelected);
+    wireOwnerPickerToggle(npOwners);
+
+    var clientList = document.getElementById("clientSuggestions");
+    var clients = Array.from(new Set(state.projects.map(function(p){ return p.client; }).filter(Boolean)));
+    clientList.innerHTML = clients.map(function(c){ return '<option value="'+escapeHtml(c)+'">'; }).join("");
+
+    var fpo = document.getElementById("filterProjectOwner");
+    var fpoCur = fpo.value || state.filters.projectOwner;
+    fpo.innerHTML = '<option value="all">All people</option>' + members.map(function(m){ return '<option value="'+m.id+'">'+escapeHtml(m.name)+"</option>"; }).join("");
+    fpo.value = fpoCur;
+  }
+
+  /* ---------------- dashboard ---------------- */
+  function renderDashboard(){
+    var range = state.currentRange;
+    var rangeTasks = state.tasks.filter(function(t){ return t.deadline && dateInRange(t.deadline, range); });
+    var rangeProposalsDue = state.projects.filter(function(p){ return p.submitBy && dateInRange(p.submitBy, range); });
+    var doneTasks = rangeTasks.filter(function(t){ return t.status==="Done"; });
+    var doneProposals = rangeProposalsDue.filter(function(p){ return p.status==="Submitted" || p.status==="Closed"; });
+    var totalDue = rangeTasks.length + rangeProposalsDue.length;
+    var totalDone = doneTasks.length + doneProposals.length;
+    var overdue = state.tasks.filter(isOverdue).length + state.projects.filter(isProposalOverdue).length;
+    var rangeMeetings = state.meetings.filter(function(m){ return dateInRange(m.date, range); });
+    var totalHours = rangeMeetings.reduce(function(sum,m){ return sum+meetingDurationHours(m); }, 0);
+    var rangeWord = state.rangeMode==="week" ? "this week" : state.rangeMode==="month" ? "this month" : "this year";
+
+    document.getElementById("statTotal").textContent = totalDue;
+    document.getElementById("statTotalSub").textContent = totalDue ? (totalDue-totalDone)+" remaining "+rangeWord+" (tasks + proposals)" : "Nothing due "+rangeWord;
+    document.getElementById("statDone").textContent = totalDone;
+    document.getElementById("statDoneSub").textContent = totalDue ? Math.round(100*totalDone/totalDue)+"% of "+rangeWord : " ";
+    document.getElementById("statOverdue").textContent = overdue;
+    document.getElementById("statOverdueSub").textContent = overdue ? "across tasks & proposals" : "nothing overdue";
+    document.getElementById("statMeetings").textContent = rangeMeetings.length;
+    document.getElementById("statMeetingsSub").textContent = rangeMeetings.length ? fmtHours(totalHours)+" total "+rangeWord : "none scheduled";
+
+    renderPipelineTable();
+    renderPersonSnapshot(range, rangeMeetings);
+  }
+
+  function renderPipelineTable(){
+    var tbody = document.getElementById("pipelineTableBody");
+    var active = activeProjectsList().slice().sort(function(a,b){
+      var da = a.submitBy || "9999-99-99", db_ = b.submitBy || "9999-99-99";
+      return da<db_?-1:(da>db_?1:0);
+    });
+    document.getElementById("pipelineCount").textContent = active.length ? active.length+" active" : "";
+    tbody.innerHTML = active.length ? active.map(function(p){
+      var pOverdue = isProposalOverdue(p);
+      return '<tr class="'+(pOverdue?"overdue":"")+'">' +
+        '<td><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span></td>" +
+        '<td class="pt-name">'+escapeHtml(p.name)+"</td>" +
+        '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
+        '<td'+(p.bd?"":' class="pt-muted"')+'>'+escapeHtml(p.bd||"—")+"</td>" +
+        '<td'+(p.language?"":' class="pt-muted"')+'>'+escapeHtml(p.language||"—")+"</td>" +
+        '<td'+(p.country?"":' class="pt-muted"')+'>'+escapeHtml(p.country||"—")+"</td>" +
+        '<td class="pt-deadline mono">'+(p.submitBy||"—")+(pOverdue?" · overdue":"")+"</td>" +
+        '<td>'+ownerDotsHtml(proposalOwners(p))+"</td>" +
+      "</tr>";
+    }).join("") : '<tr><td colspan="8" style="text-align:center; padding:22px; color:var(--text-faint); border-top:none;">No active proposals yet — add one from the Proposals tab.</td></tr>';
+  }
+
+  function renderPersonSnapshot(range, rangeMeetings){
+    document.getElementById("personSnapshotLabel").textContent = state.currentRange.label;
+    var grid = document.getElementById("personGrid");
+    grid.innerHTML = teamMembers().map(function(m, idx){
+      var isWide = idx === 0;
+      var maxProposals = isWide ? 6 : 3;
+      var maxTasks = isWide ? 4 : 2;
+      var maxMeetings = isWide ? 6 : 3;
+
+      var myProposals = state.projects.filter(function(p){ return p.status!=="Closed" && proposalOwners(p).indexOf(m.id)>-1; })
+        .sort(function(a,b){ var da=a.submitBy||"9999-99-99", db_=b.submitBy||"9999-99-99"; return da<db_?-1:(da>db_?1:0); });
+      var myTasks = state.tasks.filter(function(t){ return t.status!=="Done" && taskOwners(t).indexOf(m.id)>-1; })
+        .sort(function(a,b){ var da=a.deadline||"9999-99-99", db_=b.deadline||"9999-99-99"; return da<db_?-1:(da>db_?1:0); });
+
+      var theirMeetings = rangeMeetings.filter(function(mt){ return (mt.attendees||[]).indexOf(m.id)>-1; })
+        .sort(function(a,b){ return (a.date+a.time) < (b.date+b.time) ? -1 : 1; });
+      var hours = theirMeetings.reduce(function(sum,mt){ return sum+meetingDurationHours(mt); },0);
+
+      var shownProposals = myProposals.slice(0,maxProposals);
+      var extraProposals = myProposals.length - shownProposals.length;
+      var proposalRows = shownProposals.map(function(p){
+        return '<div class="person-row'+(isProposalOverdue(p)?" overdue":"")+'">' +
+          '<span class="pill '+pstatusClass(p.status)+'" style="font-size:9.5px; padding:2px 7px;">'+p.status+"</span>" +
+          '<span class="person-row-title">'+escapeHtml(p.name)+"</span>" +
+        "</div>";
+      }).join("");
+
+      var shownTasks = myTasks.slice(0,maxTasks);
+      var extraTasks = myTasks.length - shownTasks.length;
+      var taskRows = shownTasks.map(function(t){
+        return '<div class="person-row'+(isOverdue(t)?" overdue":"")+'">' +
+          '<span class="pill '+statusClass(t.status)+'" style="font-size:9.5px; padding:2px 7px;">'+t.status+"</span>" +
+          '<span class="person-row-title">'+escapeHtml(t.title)+"</span>" +
+        "</div>";
+      }).join("");
+
+      var extraTotal = extraProposals + extraTasks;
+      var hasWork = myProposals.length || myTasks.length;
+
+      var shownMeetings = theirMeetings.slice(0,maxMeetings);
+      var extraMeetings = theirMeetings.length - shownMeetings.length;
+      var meetingRows = shownMeetings.map(function(mt){
+        var dur = meetingDurationHours(mt);
+        return '<div class="person-row">' +
+          '<span class="mono" style="font-size:10px; color:var(--text-faint); flex:none;">'+mt.date.slice(5)+"</span>" +
+          '<span class="person-row-title">'+escapeHtml(mt.title)+"</span>" +
+          (dur ? '<span class="mono" style="font-size:10px; color:var(--text-faint); flex:none;">'+fmtHours(dur)+"</span>" : "") +
+        "</div>";
+      }).join("");
+
+      return '<div class="person-card'+(isWide?" wide":"")+'">' +
+        '<div class="person-card-head">' +
+          '<span class="team-avatar" style="width:30px;height:30px;font-size:12px;border-radius:9px;background:'+memberColor(m.id)+';">'+escapeHtml(initials(m.name))+"</span>" +
+          '<span><span class="person-card-name" style="display:block;">'+escapeHtml(m.name)+'</span><span class="person-card-role">'+escapeHtml(m.role)+"</span></span>" +
+        "</div>" +
+        '<div class="person-sections">' +
+          '<div class="person-section">' +
+            '<div class="person-section-label">Proposals &amp; tasks</div>' +
+            (hasWork
+              ? proposalRows + taskRows + (extraTotal>0 ? '<div class="person-row muted">+'+extraTotal+" more</div>" : "")
+              : '<div class="person-empty">Nothing open right now</div>') +
+          "</div>" +
+          '<div class="person-section">' +
+            '<div class="person-section-label">Meetings · '+state.currentRange.label+"</div>" +
+            (theirMeetings.length
+              ? meetingRows + (extraMeetings>0 ? '<div class="person-row muted">+'+extraMeetings+" more</div>" : "")
+              : '<div class="person-empty">No meetings this range</div>') +
+          "</div>" +
+        "</div>" +
+        '<div class="person-foot">'+theirMeetings.length+" meeting"+(theirMeetings.length===1?"":"s")+" · "+fmtHours(hours)+" total</div>" +
+      "</div>";
+    }).join("");
+  }
+
+  /* ---------------- proposals (merged with tasks) ---------------- */
+  function renderProjects(){
+    var listEl = document.getElementById("projectsList");
+    document.getElementById("projectsEmpty").hidden = state.projects.length>0;
+
+    var real = state.projects.slice().sort(function(a,b){
+      if(a.status==="Closed" && b.status!=="Closed") return 1;
+      if(b.status==="Closed" && a.status!=="Closed") return -1;
+      var da = a.submitBy || "9999-99-99", db_ = b.submitBy || "9999-99-99";
+      return da<db_?-1:(da>db_?1:0);
+    });
+
+    var filterId = state.filters.projectOwner;
+    var showGeneral = true;
+    if(filterId && filterId!=="all"){
+      real = real.filter(function(p){
+        if(proposalOwners(p).indexOf(filterId)>-1) return true;
+        return state.tasks.some(function(t){ return (t.project||"general")===p.id && taskOwners(t).indexOf(filterId)>-1; });
+      });
+      showGeneral = state.tasks.some(function(t){ return (t.project||"general")==="general" && taskOwners(t).indexOf(filterId)>-1; });
+    }
+    var ordered = showGeneral ? [GENERAL_PROJECT].concat(real) : real;
+
+    listEl.innerHTML = ordered.length ? ordered.map(function(p){ return renderProposalCardHtml(p); }).join("")
+      : '<div class="empty-state"><strong>No matches</strong>Nobody with that filter has a proposal or task right now.</div>';
+    listEl.querySelectorAll(".proposal-card").forEach(function(card){ wireProposalCard(card); });
+  }
+
+  function renderProposalCardHtml(p){
+    var isGeneral = p.id === "general";
+    var pTasks = state.tasks.filter(function(t){ return (t.project||"general")===p.id; })
+      .sort(function(a,b){ var da=a.deadline||"9999", db_=b.deadline||"9999"; return da<db_?-1:(da>db_?1:0); });
+    var openCount = pTasks.filter(function(t){ return t.status!=="Done"; }).length;
+
+    var head = '<div class="proposal-top">' +
+      (isGeneral
+        ? '<div class="project-name-input" style="flex:1 1 240px; font-weight:800; padding:6px 9px; background:transparent; border-color:transparent;">Other tasks</div>'
+        : '<input class="project-name-input" data-field="name" value="'+escapeHtml(p.name)+'">') +
+      (isGeneral ? "" :
+        '<select class="pill-select '+pstatusClass(p.status)+'" data-field="status">' +
+          ["Active","Submitted","Closed"].map(function(s){ return '<option value="'+s+'" '+(s===p.status?"selected":"")+">"+s+"</option>"; }).join("") +
+        "</select>"
+      ) +
+      '<span class="muted mono" style="font-size:11px; white-space:nowrap;">'+openCount+" open</span>" +
+      (isGeneral ? "" : '<button class="icon-btn" data-action="delete-project" title="Delete proposal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>') +
+    "</div>";
+
+    var meta = isGeneral ? (
+      '<p class="muted" style="margin:0; font-size:12px;">A place for to-dos that aren\'t tied to a specific proposal — internal admin, one-off tasks, etc.</p>'
+    ) : (
+      '<div class="proposal-meta-grid">' +
+        '<input data-field="client" placeholder="Client *" value="'+escapeHtml(p.client||"")+'">' +
+        '<input data-field="bd" placeholder="BD" value="'+escapeHtml(p.bd||"")+'">' +
+        '<input data-field="language" placeholder="Language" value="'+escapeHtml(p.language||"")+'">' +
+        '<input data-field="country" placeholder="Country" value="'+escapeHtml(p.country||"")+'">' +
+        '<label class="submit-by">Submit by <input type="date" data-field="submitBy" value="'+(p.submitBy||"")+'"></label>' +
+      "</div>"
+    );
+
+    var ownersRow = isGeneral ? "" : (
+      '<div class="proposal-owners-row">' +
+        '<span class="muted" style="font-size:11.5px;">Owners:</span>' +
+        '<div class="owner-picker" data-role="proposal-owners">'+ownerChipsHtml(proposalOwners(p))+"</div>" +
+      "</div>"
+    );
+
+    var taskRows = pTasks.length ? pTasks.map(function(t){
+      var overdue = isOverdue(t);
+      var extraStyle = (overdue ? "box-shadow:inset 3px 0 0 var(--red);" : "") + (t.status==="Done" ? "opacity:.6;" : "");
+      return '<div class="proposal-task-row" data-id="'+t.id+'" style="'+extraStyle+'">' +
+        '<div class="task-title-text" contenteditable="true" data-field="title">'+escapeHtml(t.title)+"</div>" +
+        '<div class="owner-picker" data-role="task-owners">'+ownerChipsHtml(taskOwners(t))+"</div>" +
+        '<input type="date" class="deadline-input" data-field="deadline" value="'+(t.deadline||"")+'">' +
+        '<select class="pill-select '+statusClass(t.status)+'" data-field="status">' +
+          ["Not Started","In Progress","Blocked","Done"].map(function(s){ return '<option value="'+s+'" '+(s===t.status?"selected":"")+">"+s+"</option>"; }).join("") +
+        "</select>" +
+        '<button class="icon-btn" data-action="delete-task" title="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>' +
+      "</div>";
+    }).join("") : '<div class="proposal-tasks-empty">No extra tasks yet.</div>';
+
+    var addTaskRow = '<div class="add-task-row" data-pid="'+p.id+'">' +
+        '<input type="text" placeholder="Add a task…" data-role="new-task-title">' +
+        '<div class="owner-picker" data-role="new-task-owners">'+ownerChipsHtml(pendingNewTaskOwners[p.id] || (state.me?[state.me]:[]))+"</div>" +
+        '<input type="date" data-role="new-task-deadline">' +
+        '<button type="button" class="btn" data-role="add-task-btn">Add</button>' +
+      "</div>";
+
+    return '<div class="proposal-card" data-id="'+p.id+'">' + head + meta + ownersRow +
+      '<div class="proposal-tasks">' + taskRows + addTaskRow + "</div>" +
+    "</div>";
+  }
+
+  function wireProposalCard(card){
+    var pid = card.dataset.id;
+    var isGeneral = pid === "general";
+
+    if(!isGeneral){
+      card.querySelectorAll(".proposal-top [data-field], .proposal-meta-grid [data-field]").forEach(function(el){
+        var field = el.dataset.field;
+        var evt = (el.tagName==="SELECT" || el.type==="date") ? "change" : "blur";
+        el.addEventListener(evt, function(){
+          var val = el.tagName==="DIV" ? el.textContent.trim() : el.value;
+          if(field==="status") el.className = "pill-select "+pstatusClass(val);
+          var patch = {}; patch[field]=val;
+          updateProject(pid, patch);
+        });
+      });
+      var delBtn = card.querySelector('[data-action="delete-project"]');
+      if(delBtn) delBtn.addEventListener("click", function(){
+        if(confirm("Delete this proposal? Its tasks will move to \"Other tasks\".")) deleteProject(pid);
+      });
+      var ownersPicker = card.querySelector('.proposal-owners-row .owner-picker[data-role="proposal-owners"]');
+      if(ownersPicker){
+        ownersPicker.querySelectorAll(".mini-chip").forEach(function(chip){
+          chip.addEventListener("click", function(){
+            var p = state.projects.find(function(x){ return x.id===pid; }); if(!p) return;
+            var owners = proposalOwners(p).slice();
+            var idx = owners.indexOf(chip.dataset.id);
+            if(idx>-1) owners.splice(idx,1); else owners.push(chip.dataset.id);
+            updateProject(pid, { owners: owners });
+          });
+        });
+      }
+    }
+
+    card.querySelectorAll(".proposal-task-row").forEach(function(row){
+      var tid = row.dataset.id;
+      row.querySelectorAll("[data-field]").forEach(function(el){
+        var field = el.dataset.field;
+        var evt = (el.tagName==="SELECT" || el.type==="date") ? "change" : "blur";
+        el.addEventListener(evt, function(){
+          var val = el.tagName==="DIV" ? el.textContent.trim() : el.value;
+          if(field==="status") el.className = "pill-select "+statusClass(val);
+          var patch = {}; patch[field]=val;
+          updateTask(tid, patch);
+        });
+      });
+      var ownerPicker = row.querySelector('.owner-picker[data-role="task-owners"]');
+      if(ownerPicker){
+        ownerPicker.querySelectorAll(".mini-chip").forEach(function(chip){
+          chip.addEventListener("click", function(){
+            var t = state.tasks.find(function(x){ return x.id===tid; }); if(!t) return;
+            var owners = taskOwners(t).slice();
+            var idx = owners.indexOf(chip.dataset.id);
+            if(idx>-1) owners.splice(idx,1); else owners.push(chip.dataset.id);
+            updateTask(tid, { owners: owners });
+          });
+        });
+      }
+      var delTaskBtn = row.querySelector('[data-action="delete-task"]');
+      if(delTaskBtn) delTaskBtn.addEventListener("click", function(){ deleteTask(tid); });
+    });
+
+    var addRow = card.querySelector(".add-task-row");
+    if(addRow){
+      var ownerPickerNew = addRow.querySelector('.owner-picker[data-role="new-task-owners"]');
+      ownerPickerNew.dataset.selected = JSON.stringify(pendingNewTaskOwners[pid] || (state.me?[state.me]:[]));
+      wireOwnerPickerToggle(ownerPickerNew, function(sel){ pendingNewTaskOwners[pid] = sel; });
+
+      var titleInput = addRow.querySelector('[data-role="new-task-title"]');
+      var deadlineInput = addRow.querySelector('[data-role="new-task-deadline"]');
+      var addBtn = addRow.querySelector('[data-role="add-task-btn"]');
+      function submitNewTask(){
+        var title = titleInput.value.trim();
+        if(!title) return;
+        addTask({
+          title: title,
+          project: pid,
+          owners: pendingNewTaskOwners[pid] || (state.me?[state.me]:[]),
+          deadline: deadlineInput.value || ""
+        });
+        titleInput.value = "";
+        deadlineInput.value = "";
+        delete pendingNewTaskOwners[pid];
+      }
+      addBtn.addEventListener("click", submitNewTask);
+      titleInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); submitNewTask(); } });
+    }
+  }
+
+  function addProject(data){
+    var payload = Object.assign({ status:"Active", client:"", bd:"", language:"", country:"", submitBy:"", owners:[], example:false, createdAt:Date.now() }, data);
+    if(state.db){ state.db.collection("projects").add(payload).catch(function(e){ console.warn(e); }); }
+    else { payload.id = uid(); state.projects.push(payload); renderAll(); }
+  }
+  function updateProject(id, patch){
+    if(state.db){ state.db.collection("projects").doc(id).update(patch).catch(function(e){ console.warn(e); }); }
+    else { var p=state.projects.find(function(x){ return x.id===id; }); if(p) Object.assign(p, patch); renderAll(); }
+  }
+  function deleteProject(id){
+    state.tasks.filter(function(t){ return t.project===id; }).forEach(function(t){ updateTask(t.id, { project:"general" }); });
+    if(state.db){ state.db.collection("projects").doc(id).delete().catch(function(e){ console.warn(e); }); }
+    else { state.projects = state.projects.filter(function(p){ return p.id!==id; }); renderAll(); }
+  }
+
+  function addTask(data){
+    var payload = Object.assign({
+      project: "general",
+      owners: state.me ? [state.me] : [],
+      status: "Not Started",
+      deadline: "",
+      notes: "",
+      example: false,
+      createdBy: state.me || null,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }, data);
+    if(state.db){ state.db.collection("tasks").add(payload).catch(function(e){ console.warn(e); }); }
+    else { payload.id = uid(); state.tasks.push(payload); renderAll(); }
+  }
+  function updateTask(id, patch){
+    patch = Object.assign({}, patch, { updatedAt: Date.now() });
+    if(state.db){ state.db.collection("tasks").doc(id).update(patch).catch(function(e){ console.warn(e); }); }
+    else { var t=state.tasks.find(function(x){ return x.id===id; }); if(t) Object.assign(t, patch); renderAll(); }
+  }
+  function deleteTask(id){
+    if(state.db){ state.db.collection("tasks").doc(id).delete().catch(function(e){ console.warn(e); }); }
+    else { state.tasks = state.tasks.filter(function(t){ return t.id!==id; }); renderAll(); }
+  }
+
+  /* ---------------- meetings ---------------- */
+  function meetingClientLabel(m){
+    if(m.client) return m.client;
+    if(m.project && m.project!=="general"){
+      var p = projectById(m.project);
+      if(p) return p.client || p.name;
+    }
+    return "";
+  }
+  function meetingNotes(m){ return (m.notes!=null) ? m.notes : (m.agenda||""); }
+
+  function renderMeetings(){
+    var weekOptions = Array.from(new Set(state.meetings.map(function(m){ return isoWeekId(parseISODate(m.date)); }))).sort();
+    var sel = document.getElementById("filterMeetingWeek");
+    var cur = sel.value;
+    sel.innerHTML = '<option value="all">All weeks</option>' + weekOptions.map(function(w){ return '<option value="'+w+'">'+w+"</option>"; }).join("");
+    if(weekOptions.indexOf(cur)>-1) sel.value = cur;
+
+    var clientOptions = Array.from(new Set(state.meetings.map(meetingClientLabel).filter(Boolean))).sort();
+    var csel = document.getElementById("filterMeetingClient");
+    var ccur = csel.value;
+    csel.innerHTML = '<option value="all">All clients</option>' + clientOptions.map(function(c){ return '<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+"</option>"; }).join("");
+    if(clientOptions.indexOf(ccur)>-1) csel.value = ccur;
+
+    var rows = state.meetings.filter(function(m){
+      if(state.filters.meetingWeek!=="all" && isoWeekId(parseISODate(m.date))!==state.filters.meetingWeek) return false;
+      if(state.filters.meetingClient!=="all" && meetingClientLabel(m)!==state.filters.meetingClient) return false;
+      return true;
+    }).sort(function(a,b){ return (b.date+b.time) < (a.date+a.time) ? -1 : 1; });
+
+    var list = document.getElementById("meetingsList");
+    document.getElementById("meetingsEmpty").hidden = rows.length>0;
+    list.innerHTML = rows.map(function(m){
+      var attendeeDots = (m.attendees||[]).map(function(id){
+        return '<span class="presence-dot" style="background:'+memberColor(id)+'" title="'+escapeHtml(memberName(id))+'">'+escapeHtml(initials(memberName(id)))+"</span>";
+      }).join("");
+      var actionItems = (m.actionItems||[]).map(function(ai, idx){
+        return '<div class="action-item '+(ai.done?"done":"")+'" data-idx="'+idx+'">' +
+          '<input type="checkbox" data-action="toggle-ai" '+(ai.done?"checked":"")+'>' +
+          '<span class="ai-text" contenteditable="true" data-action="edit-ai">'+escapeHtml(ai.text)+"</span>" +
+          (ai.taskId ? '<span class="pill status-inprogress">Task added</span>' : '<button type="button" class="btn btn-ghost" data-action="ai-to-task">→ Task</button>') +
+        "</div>";
+      }).join("");
+      var client = meetingClientLabel(m);
+      var dur = meetingDurationHours(m);
+      return '<div class="card meeting-card" data-id="'+m.id+'">' +
+        '<div class="meeting-head">' +
+          '<div>' +
+            '<div class="meeting-title" contenteditable="true" data-field="title">'+escapeHtml(m.title)+"</div>" +
+            '<div class="meeting-meta">' +
+              '<input type="date" class="deadline-input" data-field="date" value="'+(m.date||"")+'">' +
+              '<input type="time" class="deadline-input" data-field="time" value="'+(m.time||"")+'">' +
+              '<span class="muted" style="font-size:11px;">–</span>' +
+              '<input type="time" class="deadline-input" data-field="endTime" value="'+(m.endTime||"")+'">' +
+              (dur ? '<span class="mono" style="font-size:11px; color:var(--text-faint);">('+fmtHours(dur)+")</span>" : "") +
+              (client ? '<span class="project-tag">'+escapeHtml(client)+"</span>" : "") + (m.example ? '<span class="pill example">Example</span>' : "") +
+            "</div>" +
+          "</div>" +
+          '<div style="display:flex; align-items:center; gap:8px;">' +
+            '<div class="attendee-dots">'+attendeeDots+"</div>" +
+            '<button class="icon-btn" data-action="delete-meeting" title="Delete meeting"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>' +
+          "</div>" +
+        "</div>" +
+        '<textarea class="meeting-notes-text" data-field="notes" placeholder="Notes…">'+escapeHtml(meetingNotes(m))+"</textarea>" +
+        '<div class="action-items">'+actionItems+"</div>" +
+        '<div class="add-action-item"><input type="text" placeholder="Add an action item…" data-action="new-ai"><button type="button" class="btn" data-action="add-ai">Add</button></div>' +
+      "</div>";
+    }).join("");
+
+    list.querySelectorAll(".meeting-card").forEach(function(card){
+      var id = card.dataset.id;
+      card.querySelectorAll("[data-field]").forEach(function(el){
+        var evt = (el.tagName==="INPUT") ? "change" : "blur";
+        el.addEventListener(evt, function(){
+          var val = (el.tagName==="TEXTAREA" || el.tagName==="INPUT") ? el.value : el.textContent.trim();
+          var patch = {}; patch[el.dataset.field] = val;
+          updateMeeting(id, patch);
+        });
+      });
+      card.querySelector('[data-action="delete-meeting"]').addEventListener("click", function(){ deleteMeeting(id); });
+      card.querySelectorAll('[data-action="toggle-ai"]').forEach(function(cb){
+        cb.addEventListener("change", function(){
+          var idx = +cb.closest(".action-item").dataset.idx;
+          toggleActionItem(id, idx, cb.checked);
+        });
+      });
+      card.querySelectorAll('[data-action="edit-ai"]').forEach(function(span){
+        span.addEventListener("blur", function(){
+          var idx = +span.closest(".action-item").dataset.idx;
+          editActionItemText(id, idx, span.textContent.trim());
+        });
+      });
+      card.querySelectorAll('[data-action="ai-to-task"]').forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var idx = +btn.closest(".action-item").dataset.idx;
+          convertActionItemToTask(id, idx);
+        });
+      });
+      var addBtn = card.querySelector('[data-action="add-ai"]');
+      var input = card.querySelector('[data-action="new-ai"]');
+      function submitAi(){
+        var val = input.value.trim();
+        if(!val) return;
+        addActionItem(id, val);
+        input.value = "";
+      }
+      addBtn.addEventListener("click", submitAi);
+      input.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); submitAi(); } });
+    });
+  }
+
+  function meetingById(id){ return state.meetings.find(function(m){ return m.id===id; }); }
+  function updateMeeting(id, patch){
+    if(state.db){ state.db.collection("meetings").doc(id).update(patch).catch(function(e){ console.warn(e); }); }
+    else { var m=meetingById(id); if(m) Object.assign(m, patch); renderAll(); }
+  }
+  function deleteMeeting(id){
+    if(state.db){ state.db.collection("meetings").doc(id).delete().catch(function(e){ console.warn(e); }); }
+    else { state.meetings = state.meetings.filter(function(m){ return m.id!==id; }); renderAll(); }
+  }
+  function clearExampleMeetings(){
+    state.meetings.filter(function(m){ return m.example; }).forEach(function(m){ deleteMeeting(m.id); });
+  }
+  function addActionItem(meetingId, text){
+    var m = meetingById(meetingId); if(!m) return;
+    var items = (m.actionItems||[]).concat([{ text:text, done:false }]);
+    updateMeeting(meetingId, { actionItems: items });
+  }
+  function toggleActionItem(meetingId, idx, done){
+    var m = meetingById(meetingId); if(!m) return;
+    var items = (m.actionItems||[]).slice();
+    if(!items[idx]) return;
+    items[idx] = Object.assign({}, items[idx], { done: done });
+    updateMeeting(meetingId, { actionItems: items });
+  }
+  function editActionItemText(meetingId, idx, text){
+    var m = meetingById(meetingId); if(!m) return;
+    var items = (m.actionItems||[]).slice();
+    if(!items[idx]) return;
+    items[idx] = Object.assign({}, items[idx], { text: text });
+    updateMeeting(meetingId, { actionItems: items });
+  }
+  function convertActionItemToTask(meetingId, idx){
+    var m = meetingById(meetingId); if(!m) return;
+    var items = (m.actionItems||[]).slice();
+    if(!items[idx] || items[idx].taskId) return;
+    addTask({ title: items[idx].text, project: "general", owners: state.me ? [state.me] : [] });
+    items[idx] = Object.assign({}, items[idx], { taskId: "pending" });
+    updateMeeting(meetingId, { actionItems: items });
+  }
+
+  /* ---------------- team ---------------- */
+  function renderTeam(){
+    var grid = document.getElementById("teamGrid");
+    grid.innerHTML = teamMembers().map(function(m){
+      return '<div class="card team-card">' +
+        (state.me===m.id ? '<span class="team-you-badge">This is you</span>' : "") +
+        '<div class="team-avatar" style="background:'+memberColor(m.id)+'">'+escapeHtml(initials(m.name))+"</div>" +
+        '<input class="team-role-input" data-id="'+m.id+'" data-field="role" value="'+escapeHtml(m.role)+'" placeholder="Title / role">' +
+        '<input class="team-name-input" data-id="'+m.id+'" data-field="name" value="'+escapeHtml(m.name)+'">' +
+      "</div>";
+    }).join("");
+    grid.querySelectorAll(".team-name-input, .team-role-input").forEach(function(input){
+      input.addEventListener("change", function(){
+        updateMemberField(input.dataset.id, input.dataset.field, input.value.trim());
+      });
+    });
+  }
+  function updateMemberField(id, field, val){
+    if(!val){ var cur = memberById(id); val = cur ? cur[field] : ""; }
+    var members = teamMembers().map(function(m){
+      if(m.id!==id) return m;
+      var patch = {}; patch[field] = val;
+      return Object.assign({}, m, patch);
+    });
+    state.team = { members: members };
+    if(state.db){ state.db.doc("team/members").set(state.team).catch(function(){}); }
+    else { renderAll(); }
+    if(state.me===id) pushPresence();
+  }
+
+  /* ---------------- view switching ---------------- */
+  var VIEW_META = {
+    dashboard: { title:"Dashboard", sub:"This week at a glance, for the whole team." },
+    meetings: { title:"Meetings", sub:"Notes and action items from your weekly syncs." },
+    projects: { title:"Proposals", sub:"Every proposal in flight — client details, submission deadlines, and any extra to-dos, all in one place." },
+    team: { title:"Team", sub:"" }
+  };
+  function setView(v){
+    state.view = v;
+    document.querySelectorAll(".nav-item").forEach(function(b){ b.classList.toggle("active", b.dataset.view===v); });
+    document.querySelectorAll(".view").forEach(function(sec){ sec.hidden = sec.id !== "view-"+v; });
+    document.getElementById("viewTitle").textContent = VIEW_META[v].title;
+    document.getElementById("viewSubtitle").textContent = VIEW_META[v].sub;
+  }
+
+  /* ---------------- wiring ---------------- */
+  document.getElementById("nav").addEventListener("click", function(e){
+    var btn = e.target.closest(".nav-item"); if(btn) setView(btn.dataset.view);
+  });
+
+  function shiftRange(dir){
+    if(state.rangeMode==="week") state.refDate = addDays(state.refDate, 7*dir);
+    else if(state.rangeMode==="month") state.refDate = addMonths(state.refDate, dir);
+    else state.refDate = addYears(state.refDate, dir);
+    state.currentRange = computeRange(state.rangeMode, state.refDate);
+    renderRangeNav(); renderDashboard();
+  }
+  document.getElementById("rangePrev").addEventListener("click", function(){ shiftRange(-1); });
+  document.getElementById("rangeNext").addEventListener("click", function(){ shiftRange(1); });
+  document.getElementById("rangeToday").addEventListener("click", function(){
+    state.refDate = new Date();
+    state.currentRange = computeRange(state.rangeMode, state.refDate);
+    renderRangeNav(); renderDashboard();
+  });
+  document.getElementById("rangeModeToggle").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-mode]"); if(!btn) return;
+    state.rangeMode = btn.dataset.mode;
+    document.querySelectorAll("#rangeModeToggle .toggle-chip").forEach(function(b){ b.classList.toggle("on", b===btn); });
+    state.refDate = new Date();
+    state.currentRange = computeRange(state.rangeMode, state.refDate);
+    renderRangeNav(); renderDashboard();
+  });
+
+  document.getElementById("addProjectForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var name = document.getElementById("newProjectName").value.trim();
+    var client = document.getElementById("newProjectClient").value.trim();
+    if(!name || !client) return;
+    var npOwners = document.getElementById("newProjectOwners");
+    var owners = npOwners.dataset.selected ? JSON.parse(npOwners.dataset.selected) : (state.me ? [state.me] : []);
+    addProject({
+      name: name,
+      client: client,
+      bd: document.getElementById("newProjectBd").value.trim(),
+      language: document.getElementById("newProjectLanguage").value.trim(),
+      country: document.getElementById("newProjectCountry").value.trim(),
+      submitBy: document.getElementById("newProjectSubmitBy").value || "",
+      owners: owners,
+      status: document.getElementById("newProjectStatus").value
+    });
+    e.target.reset();
+    document.getElementById("newProjectStatus").value = "Active";
+    npOwners.dataset.selected = JSON.stringify(state.me ? [state.me] : []);
+    npOwners.innerHTML = ownerChipsHtml(state.me ? [state.me] : []);
+    wireOwnerPickerToggle(npOwners);
+  });
+
+  document.getElementById("filterMeetingWeek").addEventListener("change", function(){ state.filters.meetingWeek = this.value; renderMeetings(); });
+  document.getElementById("filterMeetingClient").addEventListener("change", function(){ state.filters.meetingClient = this.value; renderMeetings(); });
+  document.getElementById("filterProjectOwner").addEventListener("change", function(){ state.filters.projectOwner = this.value; renderProjects(); });
+  document.getElementById("clearExamplesMeetings").addEventListener("click", clearExampleMeetings);
+
+  document.getElementById("addMeetingForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var title = document.getElementById("newMeetingTitle").value.trim();
+    var date = document.getElementById("newMeetingDate").value;
+    if(!title || !date) return;
+    var attEl = document.getElementById("newMeetingAttendees");
+    var attendees = attEl.dataset.selected ? JSON.parse(attEl.dataset.selected) : Array.from(document.querySelectorAll(".attendee-chip.on")).map(function(c){ return c.dataset.id; });
+    var payload = {
+      title: title,
+      client: document.getElementById("newMeetingClient").value.trim(),
+      date: date,
+      time: document.getElementById("newMeetingTime").value || "10:00",
+      endTime: document.getElementById("newMeetingEndTime").value || "",
+      attendees: attendees,
+      notes: document.getElementById("newMeetingNotes").value,
+      actionItems: [],
+      example: false,
+      createdBy: state.me || null,
+      createdAt: Date.now()
+    };
+    if(state.db){ state.db.collection("meetings").add(payload).catch(function(err){ console.warn(err); }); }
+    else { payload.id = uid(); state.meetings.push(payload); renderAll(); }
+    e.target.reset();
+    document.getElementById("newMeetingTime").value = "10:00";
+    document.getElementById("newMeetingEndTime").value = "11:00";
+    attEl.dataset.selected = "";
+    renderWhoamiOwnerLists();
+  });
+
+  /* ---- whoami modal ---- */
+  var whoamiModal = document.getElementById("whoamiModal");
+  function openWhoamiModal(){
+    var opts = document.getElementById("whoamiOptions");
+    opts.innerHTML = teamMembers().map(function(m){
+      return '<button type="button" class="modal-option" data-id="'+m.id+'">' +
+        '<span class="team-avatar" style="background:'+memberColor(m.id)+'">'+escapeHtml(initials(m.name))+"</span>" +
+        '<span><strong style="display:block; font-size:13px;">'+escapeHtml(m.name)+'</strong><span class="muted" style="font-size:11px;">'+escapeHtml(m.role)+"</span></span>" +
+      "</button>";
+    }).join("");
+    opts.querySelectorAll(".modal-option").forEach(function(b){
+      b.addEventListener("click", function(){
+        state.me = b.dataset.id;
+        localStorage_set("cadence.me", state.me);
+        whoamiModal.hidden = true;
+        startPresenceHeartbeat();
+        renderAll();
+      });
+    });
+    whoamiModal.hidden = false;
+  }
+  document.getElementById("whoamiBtn").addEventListener("click", openWhoamiModal);
+  document.getElementById("whoamiCancel").addEventListener("click", function(){ whoamiModal.hidden = true; });
+
+  /* ---------------- passkey gate ---------------- */
+  var SITE_PASSKEY = "tamaseh2026";
+  function isUnlocked(){ return localStorage_get("cadence.unlocked") === "1"; }
+  function unlock(){
+    localStorage_set("cadence.unlocked", "1");
+    document.getElementById("passkeyGate").hidden = true;
+    document.getElementById("appRoot").hidden = false;
+    bootApp();
+  }
+  document.getElementById("passkeyForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var val = document.getElementById("passkeyInput").value.trim();
+    if(val.toLowerCase() === SITE_PASSKEY.toLowerCase()){
+      unlock();
+    } else {
+      document.getElementById("passkeyError").textContent = "That's not it — check with your team lead.";
+      document.getElementById("passkeyInput").value = "";
+      document.getElementById("passkeyInput").focus();
+    }
+  });
+
+  /* ---------------- boot ---------------- */
+  function bootApp(){
+    renderRangeNav();
+    setView("dashboard");
+    initCapabilities();
+    setTimeout(function(){ if(!state.me) openWhoamiModal(); }, 300);
+  }
+
+  if(isUnlocked()){
+    document.getElementById("passkeyGate").hidden = true;
+    document.getElementById("appRoot").hidden = false;
+    bootApp();
+  } else {
+    document.getElementById("passkeyGate").hidden = false;
+    document.getElementById("appRoot").hidden = true;
+  }
+})();
+</script>
+</body>
+</html>
