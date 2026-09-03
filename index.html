@@ -194,7 +194,7 @@
   .card-head h2{ font-size:14.5px; font-weight:700; }
   .card-head .muted{ color:var(--text-muted); font-size:12px; }
 
-  .tiles{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .tiles{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
   .tile{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); }
   .tile-label{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); }
   .tile-value{ font-family:"Libre Franklin",sans-serif; font-size:30px; font-weight:800; margin-top:6px; }
@@ -202,6 +202,7 @@
   .tile.warn .tile-value{ color:var(--amber); }
   .tile.danger .tile-value{ color:var(--red); }
   .tile.good .tile-value{ color:var(--green); }
+  .tile.slate .tile-value{ color:var(--slate); }
   .tile-sub{ font-size:11.5px; color:var(--text-faint); margin-top:4px; }
 
   .two-col{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
@@ -342,6 +343,7 @@
   .pipeline-table td{ padding:9px 10px; border-top:1px solid var(--border); vertical-align:middle; }
   .pipeline-table tr:first-child td{ border-top:none; }
   .pipeline-table td.pt-name{ font-weight:700; }
+  .pipeline-table td.pt-owner{ font-weight:700; white-space:nowrap; }
   .pipeline-table td.pt-muted{ color:var(--text-faint); }
   .pipeline-table tr.overdue td.pt-deadline{ color:var(--red); font-weight:700; }
 
@@ -489,10 +491,11 @@
     <!-- DASHBOARD -->
     <section class="view" id="view-dashboard">
       <div class="tiles">
-        <div class="tile accent"><div class="tile-label">Due</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
+        <div class="tile accent"><div class="tile-label">Proposals due</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
         <div class="tile good"><div class="tile-label">Completed</div><div class="tile-value" id="statDone">0</div><div class="tile-sub" id="statDoneSub">&nbsp;</div></div>
         <div class="tile danger"><div class="tile-label">Overdue</div><div class="tile-value" id="statOverdue">0</div><div class="tile-sub" id="statOverdueSub">&nbsp;</div></div>
         <div class="tile warn"><div class="tile-label">Meetings</div><div class="tile-value" id="statMeetings">0</div><div class="tile-sub" id="statMeetingsSub">&nbsp;</div></div>
+        <div class="tile slate"><div class="tile-label">Tasks due</div><div class="tile-value" id="statTasksDue">0</div><div class="tile-sub" id="statTasksDueSub">&nbsp;</div></div>
       </div>
 
       <div class="card">
@@ -500,7 +503,7 @@
         <div style="overflow-x:auto; padding:14px 20px 18px;">
           <table class="pipeline-table" id="pipelineTable">
             <thead>
-              <tr><th>Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Submit by</th><th>Owners</th></tr>
+              <tr><th>Owners</th><th>Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Submit by</th></tr>
             </thead>
             <tbody id="pipelineTableBody"></tbody>
           </table>
@@ -975,25 +978,25 @@
   /* ---------------- dashboard ---------------- */
   function renderDashboard(){
     var range = state.currentRange;
-    var rangeTasks = state.tasks.filter(function(t){ return t.deadline && dateInRange(t.deadline, range); });
     var rangeProposalsDue = state.projects.filter(function(p){ return p.submitBy && dateInRange(p.submitBy, range); });
-    var doneTasks = rangeTasks.filter(function(t){ return t.status==="Done"; });
     var doneProposals = rangeProposalsDue.filter(function(p){ return p.status==="Submitted" || p.status==="Closed"; });
-    var totalDue = rangeTasks.length + rangeProposalsDue.length;
-    var totalDone = doneTasks.length + doneProposals.length;
-    var overdue = state.tasks.filter(isOverdue).length + state.projects.filter(isProposalOverdue).length;
+    var overdueProposals = state.projects.filter(isProposalOverdue).length;
+    var rangeTasks = state.tasks.filter(function(t){ return t.deadline && dateInRange(t.deadline, range); });
+    var doneTasks = rangeTasks.filter(function(t){ return t.status==="Done"; });
     var rangeMeetings = state.meetings.filter(function(m){ return dateInRange(m.date, range); });
     var totalHours = rangeMeetings.reduce(function(sum,m){ return sum+meetingDurationHours(m); }, 0);
     var rangeWord = state.rangeMode==="week" ? "this week" : state.rangeMode==="month" ? "this month" : "this year";
 
-    document.getElementById("statTotal").textContent = totalDue;
-    document.getElementById("statTotalSub").textContent = totalDue ? (totalDue-totalDone)+" remaining "+rangeWord+" (tasks + proposals)" : "Nothing due "+rangeWord;
-    document.getElementById("statDone").textContent = totalDone;
-    document.getElementById("statDoneSub").textContent = totalDue ? Math.round(100*totalDone/totalDue)+"% of "+rangeWord : " ";
-    document.getElementById("statOverdue").textContent = overdue;
-    document.getElementById("statOverdueSub").textContent = overdue ? "across tasks & proposals" : "nothing overdue";
+    document.getElementById("statTotal").textContent = rangeProposalsDue.length;
+    document.getElementById("statTotalSub").textContent = rangeProposalsDue.length ? (rangeProposalsDue.length-doneProposals.length)+" remaining "+rangeWord : "Nothing due "+rangeWord;
+    document.getElementById("statDone").textContent = doneProposals.length;
+    document.getElementById("statDoneSub").textContent = rangeProposalsDue.length ? Math.round(100*doneProposals.length/rangeProposalsDue.length)+"% of "+rangeWord : " ";
+    document.getElementById("statOverdue").textContent = overdueProposals;
+    document.getElementById("statOverdueSub").textContent = overdueProposals ? "proposals past submit date" : "nothing overdue";
     document.getElementById("statMeetings").textContent = rangeMeetings.length;
     document.getElementById("statMeetingsSub").textContent = rangeMeetings.length ? fmtHours(totalHours)+" total "+rangeWord : "none scheduled";
+    document.getElementById("statTasksDue").textContent = rangeTasks.length;
+    document.getElementById("statTasksDueSub").textContent = rangeTasks.length ? (rangeTasks.length-doneTasks.length)+" remaining "+rangeWord : "No tasks due "+rangeWord;
 
     renderPipelineTable();
     renderPersonSnapshot(range, rangeMeetings);
@@ -1008,7 +1011,9 @@
     document.getElementById("pipelineCount").textContent = active.length ? active.length+" active" : "";
     tbody.innerHTML = active.length ? active.map(function(p){
       var pOverdue = isProposalOverdue(p);
+      var ownerNames = proposalOwners(p).map(memberName).join(", ");
       return '<tr class="'+(pOverdue?"overdue":"")+'">' +
+        '<td class="pt-owner'+(ownerNames?"":" pt-muted")+'">'+escapeHtml(ownerNames||"Unassigned")+"</td>" +
         '<td><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span></td>" +
         '<td class="pt-name">'+escapeHtml(p.name)+"</td>" +
         '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
@@ -1016,7 +1021,6 @@
         '<td'+(p.language?"":' class="pt-muted"')+'>'+escapeHtml(p.language||"—")+"</td>" +
         '<td'+(p.country?"":' class="pt-muted"')+'>'+escapeHtml(p.country||"—")+"</td>" +
         '<td class="pt-deadline mono">'+(p.submitBy||"—")+(pOverdue?" · overdue":"")+"</td>" +
-        '<td>'+ownerDotsHtml(proposalOwners(p))+"</td>" +
       "</tr>";
     }).join("") : '<tr><td colspan="8" style="text-align:center; padding:22px; color:var(--text-faint); border-top:none;">No active proposals yet — add one from the Proposals tab.</td></tr>';
   }
