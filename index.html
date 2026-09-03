@@ -361,9 +361,16 @@
   .person-card.wide .person-section{ padding-top:0; border-top:none; }
   .person-card.wide .person-section:last-child{ border-left:1px solid var(--border); padding-left:18px; }
   .person-section-label{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); margin-bottom:2px; }
-  .person-row{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-muted); }
+  .person-scroll{ display:flex; flex-direction:column; gap:4px; max-height:112px; overflow-y:auto; padding-right:4px; scrollbar-width:thin; }
+  .person-card.wide .person-scroll{ max-height:170px; }
+  .person-scroll::-webkit-scrollbar{ width:6px; }
+  .person-scroll::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:99px; }
+  .person-scroll::-webkit-scrollbar-track{ background:transparent; }
+  .person-row{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-muted); flex:none; }
   .person-row-title{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
   .person-row.overdue .person-row-title{ color:var(--red); font-weight:600; }
+  .person-row.done{ opacity:.65; }
+  .person-row.done .person-row-title{ text-decoration:line-through; color:var(--text-faint); }
   .person-row.muted{ color:var(--text-faint); font-style:italic; }
   .person-empty{ font-size:11.5px; color:var(--text-faint); font-style:italic; }
   .person-foot{ font-size:11px; color:var(--text-faint); margin-top:auto; padding-top:8px; border-top:1px solid var(--border); }
@@ -996,7 +1003,7 @@
     document.getElementById("statMeetings").textContent = rangeMeetings.length;
     document.getElementById("statMeetingsSub").textContent = rangeMeetings.length ? fmtHours(totalHours)+" total "+rangeWord : "none scheduled";
     document.getElementById("statTasksDue").textContent = rangeTasks.length;
-    document.getElementById("statTasksDueSub").textContent = rangeTasks.length ? (rangeTasks.length-doneTasks.length)+" remaining "+rangeWord : "No tasks due "+rangeWord;
+    document.getElementById("statTasksDueSub").textContent = rangeTasks.length ? doneTasks.length+" done · "+(rangeTasks.length-doneTasks.length)+" remaining "+rangeWord : "No tasks due "+rangeWord;
 
     renderPipelineTable();
     renderPersonSnapshot(range, rangeMeetings);
@@ -1030,43 +1037,42 @@
     var grid = document.getElementById("personGrid");
     grid.innerHTML = teamMembers().map(function(m, idx){
       var isWide = idx === 0;
-      var maxProposals = isWide ? 6 : 3;
-      var maxTasks = isWide ? 4 : 2;
-      var maxMeetings = isWide ? 6 : 3;
 
       var myProposals = state.projects.filter(function(p){ return p.status!=="Closed" && proposalOwners(p).indexOf(m.id)>-1; })
         .sort(function(a,b){ var da=a.submitBy||"9999-99-99", db_=b.submitBy||"9999-99-99"; return da<db_?-1:(da>db_?1:0); });
-      var myTasks = state.tasks.filter(function(t){ return t.status!=="Done" && taskOwners(t).indexOf(m.id)>-1; })
+      var myTasksOpen = state.tasks.filter(function(t){ return t.status!=="Done" && taskOwners(t).indexOf(m.id)>-1; })
         .sort(function(a,b){ var da=a.deadline||"9999-99-99", db_=b.deadline||"9999-99-99"; return da<db_?-1:(da>db_?1:0); });
+      var myTasksDone = state.tasks.filter(function(t){ return t.status==="Done" && taskOwners(t).indexOf(m.id)>-1; })
+        .sort(function(a,b){ var da=a.deadline||"", db_=b.deadline||""; return da<db_?1:-1; });
 
       var theirMeetings = rangeMeetings.filter(function(mt){ return (mt.attendees||[]).indexOf(m.id)>-1; })
         .sort(function(a,b){ return (a.date+a.time) < (b.date+b.time) ? -1 : 1; });
       var hours = theirMeetings.reduce(function(sum,mt){ return sum+meetingDurationHours(mt); },0);
 
-      var shownProposals = myProposals.slice(0,maxProposals);
-      var extraProposals = myProposals.length - shownProposals.length;
-      var proposalRows = shownProposals.map(function(p){
+      var proposalRows = myProposals.map(function(p){
         return '<div class="person-row'+(isProposalOverdue(p)?" overdue":"")+'">' +
           '<span class="pill '+pstatusClass(p.status)+'" style="font-size:9.5px; padding:2px 7px;">'+p.status+"</span>" +
           '<span class="person-row-title">'+escapeHtml(p.name)+"</span>" +
         "</div>";
       }).join("");
 
-      var shownTasks = myTasks.slice(0,maxTasks);
-      var extraTasks = myTasks.length - shownTasks.length;
-      var taskRows = shownTasks.map(function(t){
+      var taskRows = myTasksOpen.map(function(t){
         return '<div class="person-row'+(isOverdue(t)?" overdue":"")+'">' +
           '<span class="pill '+statusClass(t.status)+'" style="font-size:9.5px; padding:2px 7px;">'+t.status+"</span>" +
           '<span class="person-row-title">'+escapeHtml(t.title)+"</span>" +
         "</div>";
       }).join("");
 
-      var extraTotal = extraProposals + extraTasks;
-      var hasWork = myProposals.length || myTasks.length;
+      var doneTaskRows = myTasksDone.map(function(t){
+        return '<div class="person-row done">' +
+          '<span class="pill status-done" style="font-size:9.5px; padding:2px 7px;">Done</span>' +
+          '<span class="person-row-title">'+escapeHtml(t.title)+"</span>" +
+        "</div>";
+      }).join("");
 
-      var shownMeetings = theirMeetings.slice(0,maxMeetings);
-      var extraMeetings = theirMeetings.length - shownMeetings.length;
-      var meetingRows = shownMeetings.map(function(mt){
+      var hasWork = myProposals.length || myTasksOpen.length || myTasksDone.length;
+
+      var meetingRows = theirMeetings.map(function(mt){
         var dur = meetingDurationHours(mt);
         return '<div class="person-row">' +
           '<span class="mono" style="font-size:10px; color:var(--text-faint); flex:none;">'+mt.date.slice(5)+"</span>" +
@@ -1083,15 +1089,15 @@
         '<div class="person-sections">' +
           '<div class="person-section">' +
             '<div class="person-section-label">Proposals &amp; tasks</div>' +
-            (hasWork
-              ? proposalRows + taskRows + (extraTotal>0 ? '<div class="person-row muted">+'+extraTotal+" more</div>" : "")
-              : '<div class="person-empty">Nothing open right now</div>') +
+            '<div class="person-scroll">' +
+              (hasWork ? proposalRows + taskRows + doneTaskRows : '<div class="person-empty">Nothing open right now</div>') +
+            "</div>" +
           "</div>" +
           '<div class="person-section">' +
             '<div class="person-section-label">Meetings · '+state.currentRange.label+"</div>" +
-            (theirMeetings.length
-              ? meetingRows + (extraMeetings>0 ? '<div class="person-row muted">+'+extraMeetings+" more</div>" : "")
-              : '<div class="person-empty">No meetings this range</div>') +
+            '<div class="person-scroll">' +
+              (theirMeetings.length ? meetingRows : '<div class="person-empty">No meetings this range</div>') +
+            "</div>" +
           "</div>" +
         "</div>" +
         '<div class="person-foot">'+theirMeetings.length+" meeting"+(theirMeetings.length===1?"":"s")+" · "+fmtHours(hours)+" total</div>" +
