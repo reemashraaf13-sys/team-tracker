@@ -273,6 +273,8 @@
   }
   .add-form .task-title{ flex:1 1 220px; }
   .add-form .task-notes{ flex:1 1 100%; min-height:44px; resize:vertical; }
+  .date-field{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--text-faint); white-space:nowrap; }
+  .date-field input[type="date"]{ font-weight:400; color:var(--text); }
 
   .task-title-text{ font-weight:600; outline:none; border-radius:5px; padding:2px 4px; margin:-2px -4px; }
   .task-title-text:focus{ background:var(--surface-2); box-shadow:var(--focus); }
@@ -575,8 +577,8 @@
           <input type="text" id="newProjectBd" placeholder="BD" style="width:120px;">
           <input type="text" id="newProjectLanguage" placeholder="Language" style="width:110px;">
           <input type="text" id="newProjectCountry" placeholder="Country" style="width:110px;">
-          <input type="date" id="newProjectDeadline" title="Deadline" required>
-          <input type="date" id="newProjectSubmitBy" title="Submit by">
+          <label class="date-field">Deadline <input type="date" id="newProjectDeadline" required></label>
+          <label class="date-field">Submit by <input type="date" id="newProjectSubmitBy"></label>
           <select id="newProjectStatus">
             <option value="In Progress" selected>In Progress</option>
             <option value="Submitted">Submitted</option>
@@ -646,7 +648,7 @@
   function isoDate(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
   function parseISODate(s){ if(!s) return null; var p=s.split("-"); return new Date(+p[0], +p[1]-1, +p[2]); }
   function startOfWeek(d){ var nd=new Date(d.getFullYear(), d.getMonth(), d.getDate()); nd.setDate(nd.getDate()-nd.getDay()); return nd; }
-  function endOfWeek(d){ var s=startOfWeek(d); var e=new Date(s); e.setDate(e.getDate()+4); return e; }
+  function endOfWeek(d){ var s=startOfWeek(d); var e=new Date(s); e.setDate(e.getDate()+6); return e; }
   function isoWeekId(d){
     var dt=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     var dayNum = dt.getUTCDay() || 7;
