@@ -324,11 +324,13 @@
   .project-name-input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:13.5px; font-weight:700; width:100%; }
   .project-name-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
   .proposal-top .project-name-input{ flex:1 1 240px; }
-  .proposal-meta-grid{ display:grid; grid-template-columns:repeat(4,1fr) auto; gap:8px; }
+  .proposal-meta-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
   .proposal-meta-grid input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; width:100%; }
   .proposal-meta-grid input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
-  .proposal-meta-grid label.submit-by{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-faint); white-space:nowrap; }
-  .proposal-meta-grid label.submit-by input{ width:130px; }
+  .proposal-dates-row{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:8px; }
+  .proposal-dates-row label.submit-by{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--text-faint); white-space:nowrap; }
+  .proposal-dates-row label.submit-by input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; width:140px; font-weight:400; color:var(--text); }
+  .proposal-dates-row label.submit-by input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
   .proposal-owners-row{ display:flex; align-items:center; gap:8px; }
   .proposal-tasks{ background:var(--surface-2); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
   .proposal-task-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
@@ -1170,8 +1172,9 @@
     var range = state.currentRange;
     var real = state.projects.filter(function(p){
       var finished = p.status==="Submitted" || p.status==="Closed";
-      if(!finished) return true;
-      return p.submitBy && dateInRange(p.submitBy, range);
+      if(!finished) return true; // open/In Progress proposals always stay visible, no matter which period you're viewing
+      if(!p.submitBy) return true; // no submit date on file yet — keep it visible rather than hiding it
+      return dateInRange(p.submitBy, range);
     }).sort(function(a,b){
       var aFinished = a.status==="Submitted" || a.status==="Closed";
       var bFinished = b.status==="Submitted" || b.status==="Closed";
@@ -1228,6 +1231,8 @@
         '<input data-field="bd" placeholder="BD" value="'+escapeHtml(p.bd||"")+'">' +
         '<input data-field="language" placeholder="Language" value="'+escapeHtml(p.language||"")+'">' +
         '<input data-field="country" placeholder="Country" value="'+escapeHtml(p.country||"")+'">' +
+      "</div>" +
+      '<div class="proposal-dates-row">' +
         '<label class="submit-by">Deadline <input type="date" data-field="deadline" value="'+(p.deadline||"")+'"></label>' +
         '<label class="submit-by">Submit by <input type="date" data-field="submitBy" value="'+(p.submitBy||"")+'"></label>' +
       "</div>"
@@ -1271,7 +1276,7 @@
     var isGeneral = pid === "general";
 
     if(!isGeneral){
-      card.querySelectorAll(".proposal-top [data-field], .proposal-meta-grid [data-field]").forEach(function(el){
+      card.querySelectorAll(".proposal-top [data-field], .proposal-meta-grid [data-field], .proposal-dates-row [data-field]").forEach(function(el){
         var field = el.dataset.field;
         var evt = (el.tagName==="SELECT" || el.type==="date") ? "change" : "blur";
         el.addEventListener(evt, function(){
