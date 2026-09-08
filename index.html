@@ -364,6 +364,7 @@
   .pipeline-table td.pt-muted{ color:var(--text-faint); }
   .pipeline-table tr.overdue td.pt-deadline{ color:var(--red); font-weight:700; }
   .owner-name-tag{ display:inline-block; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; margin:1px 4px 1px 0; white-space:nowrap; }
+  .pipeline-table th.pt-status, .pipeline-table td.pt-status{ text-align:center; }
 
   /* ---------- Team snapshot (dashboard) ---------- */
   .person-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:14px 20px 20px; }
@@ -525,11 +526,11 @@
       </div>
 
       <div class="card">
-        <div class="card-head"><h2>Proposal pipeline</h2><span class="muted" id="pipelineCount"></span></div>
+        <div class="card-head"><h2>Proposal Pipeline</h2><span class="muted" id="pipelineCount"></span></div>
         <div style="overflow-x:auto; padding:14px 20px 18px;">
           <table class="pipeline-table" id="pipelineTable">
             <thead>
-              <tr><th>Owners</th><th>Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Deadline</th><th>Submit by</th></tr>
+              <tr><th>Owners</th><th class="pt-status">Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Deadline</th><th>Submit by</th></tr>
             </thead>
             <tbody id="pipelineTableBody"></tbody>
           </table>
@@ -537,7 +538,7 @@
       </div>
 
       <div class="card">
-        <div class="card-head"><h2>Submitted proposals</h2><span class="muted" id="submittedCount"></span></div>
+        <div class="card-head"><h2>Submitted Proposals</h2><span class="muted" id="submittedCount"></span></div>
         <div style="overflow-x:auto; padding:14px 20px 18px;">
           <table class="pipeline-table" id="submittedTable">
             <thead>
@@ -549,7 +550,7 @@
       </div>
 
       <div class="card">
-        <div class="card-head"><h2>Team snapshot</h2><span class="muted" id="personSnapshotLabel"></span></div>
+        <div class="card-head"><h2>Team Snapshot</h2><span class="muted" id="personSnapshotLabel"></span></div>
         <div class="person-grid" id="personGrid"></div>
       </div>
     </section>
@@ -750,7 +751,7 @@
   function statusClass(s){ return "status-"+String(s||"Not Started").toLowerCase().replace(/\s+/g,""); }
   function pstatusClass(s){ return "pstatus-"+String(s||"In Progress").toLowerCase().replace(/\s+/g,""); }
 
-  var GENERAL_PROJECT = { id:"general", name:"Other tasks", client:"", status:"Active" };
+  var GENERAL_PROJECT = { id:"general", name:"Other Tasks", client:"", status:"Active" };
 
   /* ---------------- state ---------------- */
   var state = {
@@ -994,7 +995,7 @@
     if(!peers.length){ row.innerHTML=""; return; }
     var avatars = peers.map(function(p){
       var isMe = p.id===state.me;
-      return '<span class="presence-dot" style="background:'+(p.color||"#5B6864")+'; color:'+(p.textColor||"#fff")+';" title="'+escapeHtml(p.name||"Someone")+(isMe?" (you)":"")+'">'+escapeHtml(initials(p.name))+"</span>";
+      return '<span class="presence-dot" style="background:'+memberColor(p.id)+'; color:'+memberTextColor(p.id)+';" title="'+escapeHtml(p.name||"Someone")+(isMe?" (you)":"")+'">'+escapeHtml(initials(p.name))+"</span>";
     }).join("");
     row.innerHTML = avatars + '<span class="presence-label">'+peers.length+" online</span>";
   }
@@ -1112,7 +1113,7 @@
       var owners = proposalOwners(p);
       return '<tr class="'+(pOverdue?"overdue":"")+'">' +
         '<td class="pt-owner'+(owners.length?"":" pt-muted")+'">'+ownerNameTagsHtml(owners)+"</td>" +
-        '<td><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span></td>" +
+        '<td class="pt-status"><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span></td>" +
         '<td class="pt-name">'+escapeHtml(p.name)+"</td>" +
         '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
         '<td'+(p.bd?"":' class="pt-muted"')+'>'+escapeHtml(p.bd||"—")+"</td>" +
@@ -1266,7 +1267,7 @@
 
     var head = '<div class="proposal-top">' +
       (isGeneral
-        ? '<div class="project-name-input" style="flex:1 1 240px; font-weight:800; padding:6px 9px; background:transparent; border-color:transparent;">Other tasks</div>'
+        ? '<div class="project-name-input" style="flex:1 1 240px; font-weight:800; padding:6px 9px; background:transparent; border-color:transparent;">Other Tasks</div>'
         : '<input class="project-name-input" data-field="name" value="'+escapeHtml(p.name)+'">') +
       (isGeneral ? "" :
         '<select class="pill-select '+pstatusClass(p.status)+'" data-field="status">' +
@@ -1350,7 +1351,7 @@
       });
       var delBtn = card.querySelector('[data-action="delete-project"]');
       if(delBtn) delBtn.addEventListener("click", function(){
-        if(confirm("Delete this proposal? Its tasks will move to \"Other tasks\".")) deleteProject(pid);
+        if(confirm("Delete this proposal? Its tasks will move to \"Other Tasks\".")) deleteProject(pid);
       });
       var ownersPicker = card.querySelector('.proposal-owners-row .owner-picker[data-role="proposal-owners"]');
       if(ownersPicker){
