@@ -29,6 +29,8 @@
     --green-soft:#DCEFE1;
     --slate:#5B6864;
     --slate-soft:#E7ECEA;
+    --hold:#5B4B9E;
+    --hold-soft:#E7E3F5;
     --shadow: 0 1px 2px rgba(20,30,28,0.06), 0 8px 24px -12px rgba(20,30,28,0.18);
     --focus: 0 0 0 3px rgba(31,111,107,0.28);
     color-scheme: light;
@@ -55,6 +57,8 @@
       --green-soft:#1C3527;
       --slate:#9BAAA5;
       --slate-soft:#233130;
+      --hold:#B4A6E8;
+      --hold-soft:#2C2547;
       --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.55);
       --focus: 0 0 0 3px rgba(87,194,186,0.35);
       color-scheme: dark;
@@ -81,6 +85,8 @@
     --green-soft:#1C3527;
     --slate:#9BAAA5;
     --slate-soft:#233130;
+    --hold:#B4A6E8;
+    --hold-soft:#2C2547;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.55);
     --focus: 0 0 0 3px rgba(87,194,186,0.35);
     color-scheme: dark;
@@ -121,8 +127,11 @@
   .brand{ display:flex; align-items:center; gap:10px; padding:0 6px; }
   .brand-mark{
     width:34px; height:34px; border-radius:9px; background:linear-gradient(155deg, var(--accent), var(--accent-strong));
+    background-size:cover; background-position:center;
     color:#fff; display:flex; align-items:center; justify-content:center; font-family:"Libre Franklin",sans-serif; font-weight:800; font-size:16px; flex:none;
+    cursor:pointer; position:relative; overflow:hidden; transition:opacity .15s;
   }
+  .brand-mark:hover{ opacity:.82; }
   .brand-name{ font-weight:800; font-size:16.5px; }
   .brand-sub{ font-size:11.5px; color:var(--text-muted); margin-top:1px; }
 
@@ -224,6 +233,7 @@
   .pill.example{ background:var(--surface-2); color:var(--text-faint); border:1px dashed var(--border-strong); }
   .pill.pstatus-active{ background:var(--accent-soft); color:var(--accent-strong); }
   .pill.pstatus-inprogress{ background:var(--accent-soft); color:var(--accent-strong); }
+  .pill.pstatus-onhold{ background:var(--hold-soft); color:var(--hold); }
   .pill.pstatus-submitted{ background:var(--amber-soft); color:var(--amber); }
   .pill.pstatus-closed{ background:var(--slate-soft); color:var(--slate); }
   .project-tag{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:var(--accent-strong); background:var(--accent-soft); border-radius:6px; padding:2px 8px; }
@@ -238,6 +248,7 @@
   select.status-done{ background-color:var(--green-soft); color:var(--green); }
   select.pstatus-active{ background-color:var(--accent-soft); color:var(--accent-strong); }
   select.pstatus-inprogress{ background-color:var(--accent-soft); color:var(--accent-strong); }
+  select.pstatus-onhold{ background-color:var(--hold-soft); color:var(--hold); }
   select.pstatus-submitted{ background-color:var(--amber-soft); color:var(--amber); }
   select.pstatus-closed{ background-color:var(--slate-soft); color:var(--slate); }
 
@@ -349,9 +360,10 @@
   .pipeline-table td{ padding:9px 10px; border-top:1px solid var(--border); vertical-align:middle; }
   .pipeline-table tr:first-child td{ border-top:none; }
   .pipeline-table td.pt-name{ font-weight:700; }
-  .pipeline-table td.pt-owner{ font-weight:700; white-space:nowrap; }
+  .pipeline-table td.pt-owner{ white-space:normal; }
   .pipeline-table td.pt-muted{ color:var(--text-faint); }
   .pipeline-table tr.overdue td.pt-deadline{ color:var(--red); font-weight:700; }
+  .owner-name-tag{ display:inline-block; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; margin:1px 4px 1px 0; white-space:nowrap; }
 
   /* ---------- Team snapshot (dashboard) ---------- */
   .person-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:14px 20px 20px; }
@@ -442,7 +454,8 @@
 <div class="app" id="appRoot" hidden>
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-mark">T</div>
+      <div class="brand-mark" id="brandMark" title="Click to upload a team logo">T</div>
+      <input type="file" id="brandLogoInput" accept="image/*" hidden>
       <div>
         <div class="brand-name">Tamaseh Tracker</div>
       </div>
@@ -581,6 +594,7 @@
           <label class="date-field">Submit by <input type="date" id="newProjectSubmitBy"></label>
           <select id="newProjectStatus">
             <option value="In Progress" selected>In Progress</option>
+            <option value="On Hold">On Hold</option>
             <option value="Submitted">Submitted</option>
           </select>
           <button type="submit" class="btn btn-primary">Add proposal</button>
@@ -702,6 +716,22 @@
 
   var MEMBER_COLORS = { joe:"#1F6F6B", reem:"#3E6FB0", oreo:"#8A5CB5", amro:"#B8862E", omar:"#B0507E" };
   function memberColor(id){ return MEMBER_COLORS[id] || "#5B6864"; }
+
+  // Boss-specified per-person colors, matching his reference tags (Joe/light blue, Orion/light green, Amro/light purple, Reem/light pink, Omar/light brown)
+  var OWNER_TAG_COLORS = {
+    joe:  { bg:"#B5E7EC", text:"#1F4D52" },
+    oreo: { bg:"#C3D8A1", text:"#374D19" },
+    amro: { bg:"#B6A4D0", text:"#4C2D7A" },
+    reem: { bg:"#F6DEEF", text:"#9F387B" },
+    omar: { bg:"#C5AEA5", text:"#4D3126" }
+  };
+  function ownerNameTagsHtml(ids){
+    if(!ids || !ids.length) return '<span class="muted" style="font-size:11px;">Unassigned</span>';
+    return ids.map(function(id){
+      var c = OWNER_TAG_COLORS[id] || { bg:"var(--slate-soft)", text:"var(--slate)" };
+      return '<span class="owner-name-tag" style="background:'+c.bg+'; color:'+c.text+';">'+escapeHtml(memberName(id))+"</span>";
+    }).join("");
+  }
   function initials(name){
     if(!name) return "?";
     var parts=name.trim().split(/\s+/).filter(Boolean);
@@ -713,7 +743,7 @@
   var DEFAULT_TEAM = { members: [
     { id:"joe", role:"Associate Director", name:"Joe" },
     { id:"reem", role:"Senior Manager", name:"Reem" },
-    { id:"oreo", role:"Senior Manager", name:"Oreo" },
+    { id:"oreo", role:"Senior Manager", name:"Orion" },
     { id:"amro", role:"Manager", name:"Amro" },
     { id:"omar", role:"Manager", name:"Omar" }
   ]};
@@ -736,7 +766,8 @@
     refDate: new Date(),
     currentRange: null,
     filters: { meetingWeek:"all", meetingClient:"all", projectOwner:"all" },
-    peers: []
+    peers: [],
+    brandLogo: ""
   };
 
   function localStorage_get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
@@ -883,6 +914,11 @@
       renderAll();
     }, function(e){ console.warn("team error", e); });
 
+    state.db.doc("team/brand").onSnapshot(function(snap){
+      state.brandLogo = (snap.exists && snap.data().logo) || "";
+      renderBrand();
+    }, function(e){ console.warn("brand error", e); });
+
     state.db.collection("presence").onSnapshot(function(snap){
       var now = Date.now();
       state.peers = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); })
@@ -921,6 +957,25 @@
     renderProjects();
     renderMeetings();
     renderWhoami();
+    renderBrand();
+  }
+
+  function renderBrand(){
+    var mark = document.getElementById("brandMark");
+    if(!mark) return;
+    if(state.brandLogo){
+      mark.style.backgroundImage = "url('"+state.brandLogo+"')";
+      mark.textContent = "";
+    } else {
+      mark.style.backgroundImage = "";
+      mark.textContent = "T";
+    }
+  }
+
+  function setBrandLogo(dataUrl){
+    state.brandLogo = dataUrl;
+    renderBrand();
+    if(state.db){ state.db.doc("team/brand").set({ logo: dataUrl, updatedAt: Date.now() }).catch(function(e){ console.warn(e); }); }
   }
 
   function renderNavCounts(){
@@ -1053,9 +1108,9 @@
     document.getElementById("pipelineCount").textContent = active.length ? active.length+" active" : "";
     tbody.innerHTML = active.length ? active.map(function(p){
       var pOverdue = isProposalOverdue(p);
-      var ownerNames = proposalOwners(p).map(memberName).join(", ");
+      var owners = proposalOwners(p);
       return '<tr class="'+(pOverdue?"overdue":"")+'">' +
-        '<td class="pt-owner'+(ownerNames?"":" pt-muted")+'">'+escapeHtml(ownerNames||"Unassigned")+"</td>" +
+        '<td class="pt-owner'+(owners.length?"":" pt-muted")+'">'+ownerNameTagsHtml(owners)+"</td>" +
         '<td><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span></td>" +
         '<td class="pt-name">'+escapeHtml(p.name)+"</td>" +
         '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
@@ -1074,9 +1129,9 @@
     var rangeWord = state.rangeMode==="week" ? "this week" : state.rangeMode==="month" ? "this month" : "this year";
     document.getElementById("submittedCount").textContent = submitted.length ? submitted.length+" submitted "+rangeWord : "";
     tbody.innerHTML = submitted.length ? submitted.map(function(p){
-      var ownerNames = proposalOwners(p).map(memberName).join(", ");
+      var owners = proposalOwners(p);
       return "<tr>" +
-        '<td class="pt-owner'+(ownerNames?"":" pt-muted")+'">'+escapeHtml(ownerNames||"Unassigned")+"</td>" +
+        '<td class="pt-owner'+(owners.length?"":" pt-muted")+'">'+ownerNameTagsHtml(owners)+"</td>" +
         '<td class="pt-name">'+escapeHtml(p.name)+"</td>" +
         '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
         '<td class="mono">'+(p.submitBy||"—")+"</td>" +
@@ -1215,7 +1270,7 @@
       (isGeneral ? "" :
         '<select class="pill-select '+pstatusClass(p.status)+'" data-field="status">' +
           (function(){
-            var opts = ["In Progress","Submitted"];
+            var opts = ["In Progress","On Hold","Submitted"];
             if(p.status && opts.indexOf(p.status)===-1) opts = [p.status].concat(opts);
             return opts.map(function(s){ return '<option value="'+s+'" '+(s===p.status?"selected":"")+">"+s+"</option>"; }).join("");
           })() +
@@ -1609,6 +1664,33 @@
   /* ---------------- wiring ---------------- */
   document.getElementById("nav").addEventListener("click", function(e){
     var btn = e.target.closest(".nav-item"); if(btn) setView(btn.dataset.view);
+  });
+
+  document.getElementById("brandMark").addEventListener("click", function(){
+    document.getElementById("brandLogoInput").click();
+  });
+  document.getElementById("brandLogoInput").addEventListener("change", function(e){
+    var file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(!file) return;
+    if(file.type.indexOf("image/")!==0){ alert("Please choose an image file."); return; }
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = new Image();
+      img.onload = function(){
+        var size = 160;
+        var canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        var ctx = canvas.getContext("2d");
+        var scale = Math.max(size/img.width, size/img.height);
+        var w = img.width*scale, h = img.height*scale;
+        ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+        setBrandLogo(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = function(){ alert("Couldn't read that image — try a different file."); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
   });
 
   function shiftRange(dir){
