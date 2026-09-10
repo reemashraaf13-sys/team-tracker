@@ -605,6 +605,17 @@
           </div>
         </form>
       </div>
+      <div class="card card-pad">
+        <form id="addGeneralTaskForm" class="add-form" style="padding:0; background:none; border:none;">
+          <input type="text" class="task-title" id="newGeneralTaskTitle" placeholder="Other task — e.g. Send faculty bios to contact" required>
+          <input type="date" id="newGeneralTaskDeadline" title="Deadline (optional)">
+          <button type="submit" class="btn btn-primary">Add task</button>
+          <div style="flex:1 1 100%; display:flex; align-items:center; gap:8px;">
+            <span class="muted" style="font-size:11.5px;">Owners:</span>
+            <div class="owner-picker" id="newGeneralTaskOwners"></div>
+          </div>
+        </form>
+      </div>
       <div class="filter-bar" style="margin:2px 2px 0;">
         <span class="muted" style="font-size:12px;">Filter:</span>
         <select id="filterProjectOwner"><option value="all">All people</option></select>
@@ -620,6 +631,8 @@
       <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
         <button type="button" class="btn btn-ghost" id="openImportBtn">Import proposals from file…</button>
         <input type="file" id="importFileInput" accept="application/json,.json" hidden>
+        <button type="button" class="btn btn-ghost" id="openUndoImportBtn" style="margin-left:8px;">Undo an import…</button>
+        <input type="file" id="undoImportFileInput" accept="application/json,.json" hidden>
       </div>
       <div class="team-grid" id="teamGrid"></div>
     </section>
@@ -643,6 +656,18 @@
     <div style="display:flex; gap:8px; justify-content:flex-end;">
       <button class="btn btn-ghost" id="importCancelBtn">Cancel</button>
       <button class="btn btn-primary" id="importConfirmBtn" disabled>Import</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="undoImportModal" hidden>
+  <div class="modal" style="max-width:440px;">
+    <h2>Undo an import</h2>
+    <p class="muted" id="undoImportSummary">Choose the same JSON file you imported — anything in the tracker that matches a row in it (same name, client and deadline) will be removed. Nothing else is touched.</p>
+    <div id="undoImportPreviewList" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; margin-bottom:14px;"></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn btn-ghost" id="undoImportCancelBtn">Cancel</button>
+      <button class="btn" id="undoImportConfirmBtn" style="background:var(--red); border-color:var(--red); color:#fff;" disabled>Remove these proposals</button>
     </div>
   </div>
 </div>
@@ -1145,6 +1170,12 @@
     npOwners.dataset.selected = JSON.stringify(npSelected);
     npOwners.innerHTML = ownerChipsHtml(npSelected);
     wireOwnerPickerToggle(npOwners);
+
+    var gtOwners = document.getElementById("newGeneralTaskOwners");
+    var gtSelected = gtOwners.dataset.selected ? JSON.parse(gtOwners.dataset.selected) : (state.me ? [state.me] : []);
+    gtOwners.dataset.selected = JSON.stringify(gtSelected);
+    gtOwners.innerHTML = ownerChipsHtml(gtSelected);
+    wireOwnerPickerToggle(gtOwners);
 
     var clientList = document.getElementById("clientSuggestions");
     var clients = Array.from(new Set(state.projects.map(function(p){ return p.client; }).filter(Boolean)));
@@ -1876,6 +1907,77 @@
     setTimeout(closeImportModal, 1400);
   });
 
+  /* ---------------- undo an import (removes proposals matching rows in the same file) ---------------- */
+  var pendingUndoIds = null;
+  function proposalIdentityKey(p){
+    return (p.name||"").trim().toLowerCase()+"|"+(p.client||"").trim().toLowerCase()+"|"+(p.deadline||"");
+  }
+  function openUndoImportModal(){
+    document.getElementById("undoImportModal").hidden = false;
+    document.getElementById("undoImportSummary").textContent = "Choose the same JSON file you imported — anything in the tracker that matches a row in it (same name, client and deadline) will be removed. Nothing else is touched.";
+    document.getElementById("undoImportPreviewList").innerHTML = "";
+    document.getElementById("undoImportConfirmBtn").disabled = true;
+    document.getElementById("undoImportConfirmBtn").textContent = "Remove these proposals";
+    pendingUndoIds = null;
+  }
+  function closeUndoImportModal(){
+    document.getElementById("undoImportModal").hidden = true;
+    pendingUndoIds = null;
+  }
+  function previewUndoFile(file){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var rows;
+      try{ rows = JSON.parse(ev.target.result); }
+      catch(e){ alert("That file isn't valid JSON — please choose the same file you imported."); return; }
+      if(!Array.isArray(rows)){ alert("Expected a JSON array of proposals."); return; }
+
+      var keySet = {};
+      rows.forEach(function(r){
+        if(!r || !r.name) return;
+        keySet[(r.name||"").trim().toLowerCase()+"|"+(r.client||"").trim().toLowerCase()+"|"+(r.deadline||"")] = true;
+      });
+
+      var matches = state.projects.filter(function(p){ return keySet[proposalIdentityKey(p)]; });
+      pendingUndoIds = matches.map(function(p){ return p.id; });
+
+      document.getElementById("undoImportSummary").innerHTML = matches.length
+        ? "<strong>"+matches.length+" proposal"+(matches.length===1?"":"s")+"</strong> in your tracker match rows in this file and will be <strong>permanently removed</strong>. Nothing else is touched."
+        : "No proposals currently in the tracker match rows in this file — nothing to remove (maybe they were already undone?).";
+      document.getElementById("undoImportPreviewList").innerHTML = matches.slice(0,12).map(function(p){
+        return '<div class="muted" style="font-size:11.5px; border-bottom:1px solid var(--border); padding:4px 0;">'
+          + escapeHtml(p.name) + (p.client?" — "+escapeHtml(p.client):"") + " · " + escapeHtml(p.deadline||"—")
+          + "</div>";
+      }).join("") + (matches.length>12 ? '<div class="muted" style="font-size:11px; padding:4px 0;">…and '+(matches.length-12)+" more</div>" : "");
+      document.getElementById("undoImportConfirmBtn").disabled = matches.length===0;
+    };
+    reader.onerror = function(){ alert("Couldn't read that file — try again."); };
+    reader.readAsText(file);
+  }
+  document.getElementById("openUndoImportBtn").addEventListener("click", function(){
+    openUndoImportModal();
+    document.getElementById("undoImportFileInput").click();
+  });
+  document.getElementById("undoImportFileInput").addEventListener("change", function(e){
+    var file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(!file) return;
+    previewUndoFile(file);
+  });
+  document.getElementById("undoImportCancelBtn").addEventListener("click", closeUndoImportModal);
+  document.getElementById("undoImportConfirmBtn").addEventListener("click", function(){
+    if(!pendingUndoIds || !pendingUndoIds.length) return;
+    if(!confirm("Remove "+pendingUndoIds.length+" imported proposals? This can't be undone.")) return;
+    var btn = document.getElementById("undoImportConfirmBtn");
+    btn.disabled = true; btn.textContent = "Removing…";
+    var count = pendingUndoIds.length;
+    pendingUndoIds.forEach(function(id){ deleteProject(id); });
+    document.getElementById("undoImportSummary").textContent = "Removed "+count+" proposal"+(count===1?"":"s")+".";
+    document.getElementById("undoImportPreviewList").innerHTML = "";
+    pendingUndoIds = null;
+    setTimeout(closeUndoImportModal, 1400);
+  });
+
   function shiftRange(dir){
     if(state.rangeMode==="week") state.refDate = addDays(state.refDate, 7*dir);
     else if(state.rangeMode==="month") state.refDate = addMonths(state.refDate, dir);
@@ -1925,6 +2027,26 @@
     npOwners.dataset.selected = JSON.stringify(state.me ? [state.me] : []);
     npOwners.innerHTML = ownerChipsHtml(state.me ? [state.me] : []);
     wireOwnerPickerToggle(npOwners);
+  });
+
+  document.getElementById("addGeneralTaskForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var titleEl = document.getElementById("newGeneralTaskTitle");
+    var title = titleEl.value.trim();
+    if(!title) return;
+    var gtOwners = document.getElementById("newGeneralTaskOwners");
+    var owners = gtOwners.dataset.selected ? JSON.parse(gtOwners.dataset.selected) : (state.me ? [state.me] : []);
+    addTask({
+      title: title,
+      project: "general",
+      owners: owners,
+      deadline: document.getElementById("newGeneralTaskDeadline").value || ""
+    });
+    e.target.reset();
+    gtOwners.dataset.selected = JSON.stringify(state.me ? [state.me] : []);
+    gtOwners.innerHTML = ownerChipsHtml(state.me ? [state.me] : []);
+    wireOwnerPickerToggle(gtOwners);
+    titleEl.focus();
   });
 
   document.getElementById("filterMeetingClient").addEventListener("change", function(){ state.filters.meetingClient = this.value; renderMeetings(); });
