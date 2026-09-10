@@ -617,6 +617,10 @@
 
     <!-- TEAM -->
     <section class="view" id="view-team" hidden>
+      <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+        <button type="button" class="btn btn-ghost" id="openImportBtn">Import proposals from file…</button>
+        <input type="file" id="importFileInput" accept="application/json,.json" hidden>
+      </div>
       <div class="team-grid" id="teamGrid"></div>
     </section>
   </main>
@@ -628,6 +632,18 @@
     <p class="muted">Pick your name so your tasks, notes and updates are attributed correctly.</p>
     <div class="modal-options" id="whoamiOptions"></div>
     <div class="modal-close"><button class="btn btn-ghost" id="whoamiCancel">Not now</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="importModal" hidden>
+  <div class="modal" style="max-width:440px;">
+    <h2>Import proposals</h2>
+    <p class="muted" id="importSummary">Choose a JSON file to preview what will be added.</p>
+    <div id="importPreviewList" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; margin-bottom:14px;"></div>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn btn-ghost" id="importCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="importConfirmBtn" disabled>Import</button>
+    </div>
   </div>
 </div>
 
@@ -948,6 +964,75 @@
     presenceTimer = setInterval(pushPresence, 20000);
   }
 
+  /* ----------------------------------------------------------------
+     Focus preservation across live re-renders.
+     Every Firestore onSnapshot (tasks/meetings/projects/team) calls
+     renderAll(), which rebuilds these lists' innerHTML from scratch —
+     including while a teammate is mid-typing in one of them. Without
+     this, one person's edit (anywhere) wipes out whatever text another
+     person is actively typing into a field in the same list, which
+     looks like "I can't add/type anything" right after someone else
+     adds something. captureEditFocus() snapshots the focused field
+     (which row, which value, cursor position) right before the rebuild;
+     restoreEditFocus() puts it back afterward so typing is never lost.
+     ---------------------------------------------------------------- */
+  function cssEsc(s){ return String(s).replace(/["\\]/g, "\\$&"); }
+
+  function captureEditFocus(containerEl){
+    var el = document.activeElement;
+    if(!el || !containerEl || el===containerEl || !containerEl.contains(el)) return null;
+    var isText = el.tagName==="INPUT" || el.tagName==="TEXTAREA" || el.isContentEditable;
+    if(!isText) return null;
+
+    var sel = null;
+    var addRow = el.closest(".add-task-row");
+    var taskRow = el.closest(".proposal-task-row");
+    var propCard = el.closest(".proposal-card");
+    var meetingCard = el.closest(".meeting-card");
+    var actionItem = el.closest(".action-item");
+
+    if(addRow && el.dataset.role){
+      sel = '.add-task-row[data-pid="'+cssEsc(addRow.dataset.pid)+'"] [data-role="'+el.dataset.role+'"]';
+    } else if(taskRow && el.dataset.field){
+      sel = '.proposal-task-row[data-id="'+cssEsc(taskRow.dataset.id)+'"] [data-field="'+el.dataset.field+'"]';
+    } else if(propCard && el.classList.contains("project-name-input")){
+      sel = '.proposal-card[data-id="'+cssEsc(propCard.dataset.id)+'"] .project-name-input';
+    } else if(propCard && el.dataset.field){
+      sel = '.proposal-card[data-id="'+cssEsc(propCard.dataset.id)+'"] [data-field="'+el.dataset.field+'"]';
+    } else if(meetingCard && actionItem && el.dataset.action==="edit-ai"){
+      sel = '.meeting-card[data-id="'+cssEsc(meetingCard.dataset.id)+'"] .action-item[data-idx="'+actionItem.dataset.idx+'"] [data-action="edit-ai"]';
+    } else if(meetingCard && el.dataset.action==="new-ai"){
+      sel = '.meeting-card[data-id="'+cssEsc(meetingCard.dataset.id)+'"] [data-action="new-ai"]';
+    } else if(meetingCard && el.dataset.field){
+      sel = '.meeting-card[data-id="'+cssEsc(meetingCard.dataset.id)+'"] [data-field="'+el.dataset.field+'"]';
+    } else if(el.dataset.id && el.dataset.field){
+      sel = '[data-id="'+cssEsc(el.dataset.id)+'"][data-field="'+el.dataset.field+'"]';
+    }
+    if(!sel) return null;
+
+    var value = el.isContentEditable ? el.textContent : el.value;
+    var selStart=null, selEnd=null;
+    if(typeof el.selectionStart==="number"){ selStart=el.selectionStart; selEnd=el.selectionEnd; }
+    return { selector: sel, value: value, selStart: selStart, selEnd: selEnd, contentEditable: !!el.isContentEditable };
+  }
+
+  function restoreEditFocus(containerEl, st){
+    if(!st) return;
+    var el;
+    try{ el = containerEl.querySelector(st.selector); }catch(e){ return; }
+    if(!el) return;
+    if(st.contentEditable){ el.textContent = st.value; } else { el.value = st.value; }
+    el.focus();
+    if(st.selStart!=null && el.setSelectionRange){
+      try{ el.setSelectionRange(st.selStart, st.selEnd); }catch(e){}
+    } else if(st.contentEditable){
+      try{
+        var range = document.createRange(); range.selectNodeContents(el); range.collapse(false);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(range);
+      }catch(e){}
+    }
+  }
+
   /* ---------------- rendering: shell ---------------- */
   function renderAll(){
     renderNavCounts();
@@ -1254,9 +1339,11 @@
     }
     var ordered = showGeneral ? [GENERAL_PROJECT].concat(real) : real;
 
+    var focusState = captureEditFocus(listEl);
     listEl.innerHTML = ordered.length ? ordered.map(function(p){ return renderProposalCardHtml(p); }).join("")
       : '<div class="empty-state"><strong>No matches</strong>Nobody with that filter has a proposal or task right now.</div>';
     listEl.querySelectorAll(".proposal-card").forEach(function(card){ wireProposalCard(card); });
+    restoreEditFocus(listEl, focusState);
   }
 
   function renderProposalCardHtml(p){
@@ -1502,6 +1589,7 @@
         ? "<strong>No meetings in this range</strong>Try a different Week/Month/Year above, or add one."
         : "<strong>No meetings yet</strong>Add your first one above.";
     }
+    var focusState = captureEditFocus(list);
     list.innerHTML = rows.map(function(m){
       var attendeeDots = (m.attendees||[]).map(function(id){
         return '<span class="presence-dot" style="background:'+memberColor(id)+'; color:'+memberTextColor(id)+';" title="'+escapeHtml(memberName(id))+'">'+escapeHtml(initials(memberName(id)))+"</span>";
@@ -1579,6 +1667,7 @@
       addBtn.addEventListener("click", submitAi);
       input.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); submitAi(); } });
     });
+    restoreEditFocus(list, focusState);
   }
 
   function meetingById(id){ return state.meetings.find(function(m){ return m.id===id; }); }
@@ -1621,6 +1710,7 @@
   /* ---------------- team ---------------- */
   function renderTeam(){
     var grid = document.getElementById("teamGrid");
+    var focusState = captureEditFocus(grid);
     grid.innerHTML = teamMembers().map(function(m){
       return '<div class="card team-card">' +
         (state.me===m.id ? '<span class="team-you-badge">This is you</span>' : "") +
@@ -1634,6 +1724,7 @@
         updateMemberField(input.dataset.id, input.dataset.field, input.value.trim());
       });
     });
+    restoreEditFocus(grid, focusState);
   }
   function updateMemberField(id, field, val){
     if(!val){ var cur = memberById(id); val = cur ? cur[field] : ""; }
@@ -1693,6 +1784,96 @@
       img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
+  });
+
+  /* ---------------- one-time proposal import (e.g. migrating an Excel pipeline sheet) ---------------- */
+  var pendingImportRows = null;
+
+  function openImportModal(){
+    document.getElementById("importModal").hidden = false;
+    document.getElementById("importSummary").textContent = "Choose a JSON file to preview what will be added.";
+    document.getElementById("importPreviewList").innerHTML = "";
+    document.getElementById("importConfirmBtn").disabled = true;
+    document.getElementById("importConfirmBtn").textContent = "Import";
+    pendingImportRows = null;
+  }
+  function closeImportModal(){
+    document.getElementById("importModal").hidden = true;
+    pendingImportRows = null;
+  }
+  function isDuplicateProposal(rec){
+    return state.projects.some(function(p){
+      return (p.name||"").trim().toLowerCase()===(rec.name||"").trim().toLowerCase()
+        && (p.client||"").trim().toLowerCase()===(rec.client||"").trim().toLowerCase()
+        && (p.deadline||"")===(rec.deadline||"");
+    });
+  }
+  function previewImportFile(file){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var rows;
+      try{ rows = JSON.parse(ev.target.result); }
+      catch(e){ alert("That file isn't valid JSON — please choose the migration file as given."); return; }
+      if(!Array.isArray(rows)){ alert("Expected a JSON array of proposals."); return; }
+
+      var validIds = teamMembers().map(function(m){ return m.id; });
+      var dupes = 0, invalid = 0;
+      var clean = [];
+      rows.forEach(function(r){
+        if(!r || !r.name || !r.deadline){ invalid++; return; }
+        var owners = (r.owners||[]).filter(function(id){ return validIds.indexOf(id)>-1; });
+        var status = ["In Progress","On Hold","Submitted"].indexOf(r.status)>-1 ? r.status : "In Progress";
+        var rec = {
+          name:r.name, client:r.client||"", bd:r.bd||"", language:r.language||"", country:r.country||"",
+          deadline:r.deadline||"", submitBy:r.submitBy||"", status:status, owners:owners
+        };
+        if(isDuplicateProposal(rec)){ dupes++; return; }
+        clean.push(rec);
+      });
+
+      pendingImportRows = clean;
+      var byStatus = {};
+      clean.forEach(function(r){ byStatus[r.status]=(byStatus[r.status]||0)+1; });
+      var statusSummary = Object.keys(byStatus).map(function(k){ return byStatus[k]+" "+k; }).join(", ");
+
+      document.getElementById("importSummary").innerHTML =
+        "<strong>"+clean.length+" proposal"+(clean.length===1?"":"s")+"</strong> ready to import"
+        + (statusSummary ? " ("+escapeHtml(statusSummary)+")" : "")
+        + (dupes ? ". "+dupes+" already in the tracker and will be skipped." : ".")
+        + (invalid ? " "+invalid+" row(s) were missing a name/deadline and were skipped." : "");
+
+      document.getElementById("importPreviewList").innerHTML = clean.slice(0,12).map(function(r){
+        return '<div class="muted" style="font-size:11.5px; border-bottom:1px solid var(--border); padding:4px 0;">'
+          + escapeHtml(r.name) + (r.client?" — "+escapeHtml(r.client):"") + " · " + escapeHtml(r.deadline||"—") + " · " + escapeHtml(r.status)
+          + "</div>";
+      }).join("") + (clean.length>12 ? '<div class="muted" style="font-size:11px; padding:4px 0;">…and '+(clean.length-12)+" more</div>" : "");
+
+      document.getElementById("importConfirmBtn").disabled = clean.length===0;
+    };
+    reader.onerror = function(){ alert("Couldn't read that file — try again."); };
+    reader.readAsText(file);
+  }
+  document.getElementById("openImportBtn").addEventListener("click", function(){
+    openImportModal();
+    document.getElementById("importFileInput").click();
+  });
+  document.getElementById("importFileInput").addEventListener("change", function(e){
+    var file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(!file) return;
+    previewImportFile(file);
+  });
+  document.getElementById("importCancelBtn").addEventListener("click", closeImportModal);
+  document.getElementById("importConfirmBtn").addEventListener("click", function(){
+    if(!pendingImportRows || !pendingImportRows.length) return;
+    var btn = document.getElementById("importConfirmBtn");
+    btn.disabled = true; btn.textContent = "Importing…";
+    var count = pendingImportRows.length;
+    pendingImportRows.forEach(function(rec){ addProject(rec); });
+    document.getElementById("importSummary").textContent = "Imported "+count+" proposal"+(count===1?"":"s")+".";
+    document.getElementById("importPreviewList").innerHTML = "";
+    pendingImportRows = null;
+    setTimeout(closeImportModal, 1400);
   });
 
   function shiftRange(dir){
