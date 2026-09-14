@@ -814,16 +814,25 @@
   }
   function proposalHistoryHtml(p){
     var hist = p.history || [];
-    if(!hist.length) return "";
+    var parts = [];
+    // firstSubmittedAt is the one authoritative, never-overwritten record of the true
+    // original submission date — set once and left alone by every later reopen/
+    // resubmit (and by "Clear history"), so it can't drift onto a resubmission date.
     var seenSubmitted = false;
-    var parts = hist.map(function(h){
+    if(p.firstSubmittedAt){
+      parts.push("Originally submitted "+fmtHistoryDate(p.firstSubmittedAt));
+      seenSubmitted = true;
+    }
+    hist.forEach(function(h){
       var label = h.event;
       if(h.event==="Submitted"){
+        // only reachable for older proposals logged before firstSubmittedAt existed
         label = seenSubmitted ? "Resubmitted" : "Originally submitted";
         seenSubmitted = true;
       }
-      return label+" "+fmtHistoryDate(h.date);
+      parts.push(label+" "+fmtHistoryDate(h.date));
     });
+    if(!parts.length) return "";
     return '<div class="proposal-history">'+escapeHtml(parts.join(" · "))+
       ' <button type="button" class="link-btn" data-action="clear-history" title="Remove this history log and reset the reopen count — for clearing out test clicks or mistakes">Clear history</button>' +
     "</div>";
@@ -1595,7 +1604,7 @@
   }
 
   function addProject(data){
-    var payload = Object.assign({ status:"In Progress", client:"", bd:"", language:"", country:"", deadline:"", submitBy:"", owners:[], history:[], reopenCount:0, example:false, createdAt:Date.now() }, data);
+    var payload = Object.assign({ status:"In Progress", client:"", bd:"", language:"", country:"", deadline:"", submitBy:"", firstSubmittedAt:"", owners:[], history:[], reopenCount:0, example:false, createdAt:Date.now() }, data);
     if(state.db){ state.db.collection("projects").add(payload).catch(function(e){ console.warn(e); }); }
     else { payload.id = uid(); state.projects.push(payload); renderAll(); }
   }
@@ -1610,23 +1619,36 @@
   function transitionProposalStatus(pid, newStatus){
     var proj = state.projects.find(function(x){ return x.id===pid; });
     var patch = { status: newStatus };
-    if(newStatus==="Submitted" || newStatus==="Reopened"){
-      var hist = (proj && proj.history) ? proj.history.slice() : [];
-      hist.push({ event: newStatus, date: todayStr() });
-      patch.history = hist;
-      if(newStatus==="Submitted") patch.submitBy = todayStr();
-      if(newStatus==="Reopened"){
-        // Reopening starts a fresh round: the old deadline/submit-by belonged to the
-        // round that just ended (they're preserved in the history log above), so clear
-        // them here rather than leaving them on screen looking like they still apply —
-        // that mixing of "old deadline, new submit-by" was exactly the confusing part.
-        patch.deadline = "";
-        patch.submitBy = "";
-        // reopenCount persists even after it's resubmitted and drops out of the Pipeline —
-        // it's the one thing that survives so a year-end look can find which clients/BD
-        // leads came back for the most rounds of edits.
-        patch.reopenCount = ((proj && proj.reopenCount) || 0) + 1;
+    if(newStatus==="Submitted"){
+      patch.submitBy = todayStr();
+      if(proj && proj.firstSubmittedAt){
+        // already submitted at least once before — this is a resubmission after a
+        // reopen, so log it; firstSubmittedAt itself is never touched again, which is
+        // what keeps "Originally submitted" pinned to the true original date even
+        // through further reopen/resubmit rounds (or a "Clear history" reset).
+        var hist = (proj.history) ? proj.history.slice() : [];
+        hist.push({ event:"Resubmitted", date: todayStr() });
+        patch.history = hist;
+      } else {
+        // first time this proposal has ever been marked Submitted.
+        patch.firstSubmittedAt = todayStr();
       }
+    }
+    if(newStatus==="Reopened"){
+      var hist2 = (proj && proj.history) ? proj.history.slice() : [];
+      hist2.push({ event:"Reopened", date: todayStr() });
+      patch.history = hist2;
+      // Reopening starts a fresh round: the old deadline/submit-by belonged to the
+      // round that just ended (still visible in the history log via firstSubmittedAt/
+      // the log above), so clear them here rather than leaving them on screen looking
+      // like they still apply — that mixing of "old deadline, new submit-by" was
+      // exactly the confusing part.
+      patch.deadline = "";
+      patch.submitBy = "";
+      // reopenCount persists even after it's resubmitted and drops out of the Pipeline —
+      // it's the one thing that survives so a year-end look can find which clients/BD
+      // leads came back for the most rounds of edits.
+      patch.reopenCount = ((proj && proj.reopenCount) || 0) + 1;
     }
     updateProject(pid, patch);
   }
@@ -2106,7 +2128,7 @@
       deadline: document.getElementById("newProjectDeadline").value || "",
       submitBy: newSubmitBy,
       owners: owners,
-      history: newStatus==="Submitted" ? [{ event:"Submitted", date:newSubmitBy }] : [],
+      firstSubmittedAt: newStatus==="Submitted" ? newSubmitBy : "",
       status: newStatus
     });
     e.target.reset();
