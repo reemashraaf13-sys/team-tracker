@@ -529,7 +529,7 @@
     <!-- DASHBOARD -->
     <section class="view" id="view-dashboard">
       <div class="tiles">
-        <div class="tile accent"><div class="tile-label">Proposals due</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
+        <div class="tile accent"><div class="tile-label">Proposals open</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
         <div class="tile good"><div class="tile-label">Completed</div><div class="tile-value" id="statDone">0</div><div class="tile-sub" id="statDoneSub">&nbsp;</div></div>
         <div class="tile danger"><div class="tile-label">Overdue</div><div class="tile-value" id="statOverdue">0</div><div class="tile-sub" id="statOverdueSub">&nbsp;</div></div>
         <div class="tile warn"><div class="tile-label">Meetings</div><div class="tile-value" id="statMeetings">0</div><div class="tile-sub" id="statMeetingsSub">&nbsp;</div></div>
@@ -1212,8 +1212,8 @@
     var rangeMeetings = state.meetings.filter(function(m){ return dateInRange(m.date, range); });
     var totalHours = rangeMeetings.reduce(function(sum,m){ return sum+meetingDurationHours(m); }, 0);
 
-    document.getElementById("statTotal").textContent = proposalsDueRange.length;
-    document.getElementById("statTotalSub").textContent = proposalsDueRange.length ? proposalsDueRemaining.length+" still open "+rangeWord : "Nothing due "+rangeWord;
+    document.getElementById("statTotal").textContent = proposalsDueRemaining.length;
+    document.getElementById("statTotalSub").textContent = proposalsDueRange.length ? proposalsDueRange.length+" due "+rangeWord : "Nothing due "+rangeWord;
     document.getElementById("statDone").textContent = submittedRange.length;
     document.getElementById("statDoneSub").textContent = submittedRange.length ? "submitted "+rangeWord : "none submitted "+rangeWord;
     document.getElementById("statOverdue").textContent = overdueProposals;
@@ -1230,6 +1230,7 @@
 
   function renderPipelineTable(){
     var tbody = document.getElementById("pipelineTableBody");
+    var focusState = captureEditFocus(tbody);
     var active = activeProjectsList().slice().sort(function(a,b){
       var da = a.deadline || "9999-99-99", db_ = b.deadline || "9999-99-99";
       return da<db_?-1:(da>db_?1:0);
@@ -1238,20 +1239,30 @@
     tbody.innerHTML = active.length ? active.map(function(p){
       var pOverdue = isProposalOverdue(p);
       var owners = proposalOwners(p);
+      var statusOpts = ["In Progress","On Hold","Reopened","Submitted"];
+      if(p.status && statusOpts.indexOf(p.status)===-1) statusOpts = [p.status].concat(statusOpts);
       return '<tr class="'+(pOverdue?"overdue":"")+'">' +
         '<td class="pt-owner'+(owners.length?"":" pt-muted")+'">'+ownerNameTagsHtml(owners)+"</td>" +
-        '<td class="pt-status"><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span>" +
+        '<td class="pt-status">' +
+          '<select class="pill-select '+pstatusClass(p.status)+'" data-id="'+p.id+'" data-field="status">' +
+            statusOpts.map(function(s){ return '<option value="'+s+'" '+(s===p.status?"selected":"")+">"+s+"</option>"; }).join("") +
+          "</select>" +
           (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="resubmit" data-id="'+p.id+'" title="Mark resubmitted — clears it from the Pipeline">✓ resubmitted</button>' : "") +
+          (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="undo-reopen" data-id="'+p.id+'" title="Undo — reopened by mistake">↺ undo</button>' : "") +
         "</td>" +
         '<td class="pt-name">'+escapeHtml(p.name)+(p.reopenCount ? ' <span class="muted mono reopen-marker" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "")+"</td>" +
         '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
         '<td'+(p.bd?"":' class="pt-muted"')+'>'+escapeHtml(p.bd||"—")+"</td>" +
         '<td'+(p.language?"":' class="pt-muted"')+'>'+escapeHtml(p.language||"—")+"</td>" +
         '<td'+(p.country?"":' class="pt-muted"')+'>'+escapeHtml(p.country||"—")+"</td>" +
-        '<td class="pt-deadline mono">'+(p.deadline||"—")+(pOverdue?" · overdue":"")+"</td>" +
-        '<td class="mono'+(p.submitBy?"":" pt-muted")+'">'+(p.submitBy||"—")+"</td>" +
+        '<td class="pt-deadline">'+
+          '<input type="date" class="deadline-input" data-id="'+p.id+'" data-field="deadline" value="'+(p.deadline||"")+'"'+(pOverdue?' style="border-color:var(--red); color:var(--red);"':"")+'>'+
+          (pOverdue?' <span class="muted" style="font-size:10px; color:var(--red);">overdue</span>':"")+
+        "</td>" +
+        '<td><input type="date" class="deadline-input" data-id="'+p.id+'" data-field="submitBy" value="'+(p.submitBy||"")+'"></td>' +
       "</tr>";
     }).join("") : '<tr><td colspan="9" style="text-align:center; padding:22px; color:var(--text-faint); border-top:none;">No active proposals yet — add one from the Proposals tab.</td></tr>';
+    restoreEditFocus(tbody, focusState);
   }
 
   function renderSubmittedTable(range){
@@ -1411,6 +1422,7 @@
         "</select>"
       ) +
       (!isGeneral && p.status==="Reopened" ? '<button class="icon-btn" data-action="mark-resubmitted" title="Mark resubmitted — clears it from the Pipeline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></button>' : "") +
+      (!isGeneral && p.status==="Reopened" ? '<button class="icon-btn" data-action="undo-reopen" title="Undo — reopened by mistake, restore its previous status and dates"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>' : "") +
       (!isGeneral && p.reopenCount ? '<span class="muted mono reopen-marker" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "") +
       '<span class="muted mono" style="font-size:11px; white-space:nowrap;">'+openCount+" open</span>" +
       (isGeneral ? "" : '<button class="icon-btn" data-action="delete-project" title="Delete proposal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>') +
@@ -1491,6 +1503,10 @@
       var resubmitBtn = card.querySelector('[data-action="mark-resubmitted"]');
       if(resubmitBtn) resubmitBtn.addEventListener("click", function(){
         transitionProposalStatus(pid, "Submitted");
+      });
+      var undoReopenBtn = card.querySelector('[data-action="undo-reopen"]');
+      if(undoReopenBtn) undoReopenBtn.addEventListener("click", function(){
+        undoReopenProposal(pid);
       });
       var ownersPicker = card.querySelector('.proposal-owners-row .owner-picker[data-role="proposal-owners"]');
       if(ownersPicker){
@@ -1583,7 +1599,12 @@
     if(newStatus==="Reopened"){
       // Reopening starts a fresh round: the old deadline/submit-by belonged to the
       // round that just ended, so clear them here rather than leaving them on screen
-      // looking like they still apply to the new round.
+      // looking like they still apply to the new round. Stash them (plus the status
+      // it was in) so an accidental "Reopened" click can be undone below without
+      // losing that round's dates or permanently inflating reopenCount.
+      patch.preReopenStatus = (proj && proj.status) || "Submitted";
+      patch.preReopenDeadline = (proj && proj.deadline) || "";
+      patch.preReopenSubmitBy = (proj && proj.submitBy) || "";
       patch.deadline = "";
       patch.submitBy = "";
       // reopenCount persists even after it's resubmitted and drops out of the Pipeline —
@@ -1594,6 +1615,23 @@
       patch.reopenCount = ((proj && proj.reopenCount) || 0) + 1;
     }
     updateProject(pid, patch);
+  }
+  /* Reverts an accidental "Reopened" click: restores the status/deadline/submit-by
+     that were in place right before it was reopened, and backs reopenCount off by
+     one so it doesn't get counted as a real round of edits. Does nothing to the
+     proposal's tasks or owners — only the reopen itself. */
+  function undoReopenProposal(pid){
+    var proj = state.projects.find(function(x){ return x.id===pid; });
+    if(!proj || proj.status!=="Reopened") return;
+    updateProject(pid, {
+      status: proj.preReopenStatus || "Submitted",
+      deadline: proj.preReopenDeadline || "",
+      submitBy: proj.preReopenSubmitBy || "",
+      reopenCount: Math.max(0, (proj.reopenCount||0) - 1),
+      preReopenStatus: "",
+      preReopenDeadline: "",
+      preReopenSubmitBy: ""
+    });
   }
   function deleteProject(id){
     state.tasks.filter(function(t){ return t.project===id; }).forEach(function(t){ updateTask(t.id, { project:"general" }); });
@@ -1839,6 +1877,24 @@
   document.getElementById("pipelineTableBody").addEventListener("click", function(e){
     var btn = e.target.closest('[data-action="resubmit"]');
     if(btn) transitionProposalStatus(btn.dataset.id, "Submitted");
+    var undoBtn = e.target.closest('[data-action="undo-reopen"]');
+    if(undoBtn) undoReopenProposal(undoBtn.dataset.id);
+  });
+  /* Status/deadline/submit-by are editable straight from the Pipeline table now,
+     so this decreases the number of clicks vs opening the proposal in the
+     Proposals tab. Same data, same helpers — edits here show up there instantly
+     (and vice versa) since both read/write the same proposal record. */
+  document.getElementById("pipelineTableBody").addEventListener("change", function(e){
+    var el = e.target;
+    var pid = el.dataset.id, field = el.dataset.field;
+    if(!pid || !field) return;
+    if(field==="status"){
+      el.className = "pill-select "+pstatusClass(el.value);
+      transitionProposalStatus(pid, el.value);
+      return;
+    }
+    var patch = {}; patch[field] = el.value;
+    updateProject(pid, patch);
   });
 
   document.getElementById("brandMark").addEventListener("click", function(){
