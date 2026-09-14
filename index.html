@@ -352,7 +352,6 @@
   .proposal-dates-row label.submit-by{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--text-faint); white-space:nowrap; }
   .proposal-dates-row label.submit-by input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; width:140px; font-weight:400; color:var(--text); }
   .proposal-dates-row label.submit-by input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
-  .proposal-history{ font-size:11px; color:var(--text-faint); margin-top:4px; }
   .link-btn{ border:none; background:none; padding:0; font-size:11px; color:var(--text-faint); text-decoration:underline; cursor:pointer; }
   .link-btn:hover{ color:var(--accent-strong); }
   .reopen-marker{ font-size:11px; color:var(--reopen); background:var(--reopen-soft); border-radius:6px; padding:2px 6px; }
@@ -803,40 +802,6 @@
 
   function statusClass(s){ return "status-"+String(s||"Not Started").toLowerCase().replace(/\s+/g,""); }
   function pstatusClass(s){ return "pstatus-"+String(s||"In Progress").toLowerCase().replace(/\s+/g,""); }
-
-  /* A proposal that comes back for edits after being submitted gets a short,
-     read-only history line instead of losing its original submit date —
-     e.g. "Originally submitted Jan 12, 2026 · Reopened Mar 1, 2026 · Resubmitted Mar 10, 2026". */
-  function fmtHistoryDate(iso){
-    var d = parseISODate(iso);
-    if(!d) return iso || "";
-    return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
-  }
-  function proposalHistoryHtml(p){
-    var hist = p.history || [];
-    var parts = [];
-    // firstSubmittedAt is the one authoritative, never-overwritten record of the true
-    // original submission date — set once and left alone by every later reopen/
-    // resubmit (and by "Clear history"), so it can't drift onto a resubmission date.
-    var seenSubmitted = false;
-    if(p.firstSubmittedAt){
-      parts.push("Originally submitted "+fmtHistoryDate(p.firstSubmittedAt));
-      seenSubmitted = true;
-    }
-    hist.forEach(function(h){
-      var label = h.event;
-      if(h.event==="Submitted"){
-        // only reachable for older proposals logged before firstSubmittedAt existed
-        label = seenSubmitted ? "Resubmitted" : "Originally submitted";
-        seenSubmitted = true;
-      }
-      parts.push(label+" "+fmtHistoryDate(h.date));
-    });
-    if(!parts.length) return "";
-    return '<div class="proposal-history">'+escapeHtml(parts.join(" · "))+
-      ' <button type="button" class="link-btn" data-action="clear-history" title="Remove this history log and reset the reopen count — for clearing out test clicks or mistakes">Clear history</button>' +
-    "</div>";
-  }
 
   var GENERAL_PROJECT = { id:"general", name:"Other Tasks", client:"", status:"Active" };
 
@@ -1464,8 +1429,7 @@
         '<label class="submit-by">Deadline <input type="date" data-field="deadline" value="'+(p.deadline||"")+'" placeholder="'+(p.status==="Reopened"?"New deadline":"")+'"></label>' +
         '<label class="submit-by">Submit by <input type="date" data-field="submitBy" value="'+(p.submitBy||"")+'"></label>' +
       "</div>" +
-      (p.status==="Reopened" ? '<p class="muted" style="margin:6px 0 0; font-size:11px;">Reopened — set a new deadline above for this round; submit-by fills in once it\'s marked Submitted again.</p>' : "") +
-      proposalHistoryHtml(p)
+      (p.status==="Reopened" ? '<p class="muted" style="margin:6px 0 0; font-size:11px;">Reopened — set a new deadline above for this round; submit-by fills in once it\'s marked Submitted again.</p>' : "")
     );
 
     var ownersRow = isGeneral ? "" : (
@@ -1527,17 +1491,6 @@
       var resubmitBtn = card.querySelector('[data-action="mark-resubmitted"]');
       if(resubmitBtn) resubmitBtn.addEventListener("click", function(){
         transitionProposalStatus(pid, "Submitted");
-      });
-      var clearHistBtn = card.querySelector('[data-action="clear-history"]');
-      if(clearHistBtn) clearHistBtn.addEventListener("click", function(){
-        if(confirm("Clear this proposal's history log and reopen count? This can't be undone — the current status and dates stay as they are, only the log, the ↺ count, and the \"originally submitted\" record reset.")){
-          var proj = state.projects.find(function(x){ return x.id===pid; });
-          // Reset "originally submitted" to whatever's on the card right now, so the
-          // log starts truthfully clean from this point rather than keeping a stale
-          // (possibly wrong, e.g. from testing) original date around.
-          var freshFirstSubmitted = (proj && proj.status==="Submitted") ? (proj.submitBy || "") : "";
-          updateProject(pid, { history: [], reopenCount: 0, firstSubmittedAt: freshFirstSubmitted });
-        }
       });
       var ownersPicker = card.querySelector('.proposal-owners-row .owner-picker[data-role="proposal-owners"]');
       if(ownersPicker){
@@ -1609,7 +1562,7 @@
   }
 
   function addProject(data){
-    var payload = Object.assign({ status:"In Progress", client:"", bd:"", language:"", country:"", deadline:"", submitBy:"", firstSubmittedAt:"", owners:[], history:[], reopenCount:0, example:false, createdAt:Date.now() }, data);
+    var payload = Object.assign({ status:"In Progress", client:"", bd:"", language:"", country:"", deadline:"", submitBy:"", owners:[], reopenCount:0, example:false, createdAt:Date.now() }, data);
     if(state.db){ state.db.collection("projects").add(payload).catch(function(e){ console.warn(e); }); }
     else { payload.id = uid(); state.projects.push(payload); renderAll(); }
   }
@@ -1626,41 +1579,18 @@
     var patch = { status: newStatus };
     if(newStatus==="Submitted"){
       patch.submitBy = todayStr();
-      if(proj && proj.firstSubmittedAt){
-        // already submitted at least once before — this is a resubmission after a
-        // reopen, so log it; firstSubmittedAt itself is never touched again, which is
-        // what keeps "Originally submitted" pinned to the true original date even
-        // through further reopen/resubmit rounds (or a "Clear history" reset).
-        var hist = (proj.history) ? proj.history.slice() : [];
-        hist.push({ event:"Resubmitted", date: todayStr() });
-        patch.history = hist;
-      } else {
-        // first time this proposal has ever been marked Submitted.
-        patch.firstSubmittedAt = todayStr();
-      }
     }
     if(newStatus==="Reopened"){
-      var hist2 = (proj && proj.history) ? proj.history.slice() : [];
-      hist2.push({ event:"Reopened", date: todayStr() });
-      patch.history = hist2;
-      // The actual bug: a proposal that was already Submitted before this feature
-      // existed (or before it was ever reopened) has a real submit-by on file but no
-      // firstSubmittedAt yet — that submit-by IS the true original date. Capture it
-      // here, before it gets cleared below, so the next "Submitted" click correctly
-      // treats itself as a resubmission instead of stamping today over the real date.
-      if(proj && !proj.firstSubmittedAt && proj.submitBy){
-        patch.firstSubmittedAt = proj.submitBy;
-      }
       // Reopening starts a fresh round: the old deadline/submit-by belonged to the
-      // round that just ended (still visible in the history log via firstSubmittedAt/
-      // the log above), so clear them here rather than leaving them on screen looking
-      // like they still apply — that mixing of "old deadline, new submit-by" was
-      // exactly the confusing part.
+      // round that just ended, so clear them here rather than leaving them on screen
+      // looking like they still apply to the new round.
       patch.deadline = "";
       patch.submitBy = "";
       // reopenCount persists even after it's resubmitted and drops out of the Pipeline —
       // it's the one thing that survives so a year-end look can find which clients/BD
-      // leads came back for the most rounds of edits.
+      // leads came back for the most rounds of edits. (The detailed date-by-date
+      // history log was removed — it kept showing the wrong original date — so this
+      // simple counter is the only reopen-tracking left for now.)
       patch.reopenCount = ((proj && proj.reopenCount) || 0) + 1;
     }
     updateProject(pid, patch);
@@ -2141,7 +2071,6 @@
       deadline: document.getElementById("newProjectDeadline").value || "",
       submitBy: newSubmitBy,
       owners: owners,
-      firstSubmittedAt: newStatus==="Submitted" ? newSubmitBy : "",
       status: newStatus
     });
     e.target.reset();
