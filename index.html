@@ -355,7 +355,7 @@
   .proposal-history{ font-size:11px; color:var(--text-faint); margin-top:4px; }
   .link-btn{ border:none; background:none; padding:0; font-size:11px; color:var(--text-faint); text-decoration:underline; cursor:pointer; }
   .link-btn:hover{ color:var(--accent-strong); }
-  .reopen-resubmit-btn{ font-size:11px; padding:4px 10px; margin-top:6px; }
+  .reopen-marker{ font-size:11px; color:var(--reopen); background:var(--reopen-soft); border-radius:6px; padding:2px 6px; }
   .proposal-owners-row{ display:flex; align-items:center; gap:8px; }
   .proposal-tasks{ background:var(--surface-2); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
   .proposal-task-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
@@ -554,7 +554,7 @@
         <div style="overflow-x:auto; padding:14px 20px 18px;">
           <table class="pipeline-table" id="submittedTable">
             <thead>
-              <tr><th>Owners</th><th>Proposal</th><th>Client</th><th>Submitted on</th></tr>
+              <tr><th>Owners</th><th>Proposal</th><th>Client</th><th>BD</th><th>Submitted on</th></tr>
             </thead>
             <tbody id="submittedTableBody"></tbody>
           </table>
@@ -825,7 +825,7 @@
       return label+" "+fmtHistoryDate(h.date);
     });
     return '<div class="proposal-history">'+escapeHtml(parts.join(" · "))+
-      ' <button type="button" class="link-btn" data-action="clear-history" title="Remove this history log — for clearing out test clicks or mistakes">Clear history</button>' +
+      ' <button type="button" class="link-btn" data-action="clear-history" title="Remove this history log and reset the reopen count — for clearing out test clicks or mistakes">Clear history</button>' +
     "</div>";
   }
 
@@ -1269,7 +1269,7 @@
         '<td class="pt-status"><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span>" +
           (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="resubmit" data-id="'+p.id+'" title="Mark resubmitted — clears it from the Pipeline">✓ resubmitted</button>' : "") +
         "</td>" +
-        '<td class="pt-name">'+escapeHtml(p.name)+"</td>" +
+        '<td class="pt-name">'+escapeHtml(p.name)+(p.reopenCount ? ' <span class="muted mono reopen-marker" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "")+"</td>" +
         '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
         '<td'+(p.bd?"":' class="pt-muted"')+'>'+escapeHtml(p.bd||"—")+"</td>" +
         '<td'+(p.language?"":' class="pt-muted"')+'>'+escapeHtml(p.language||"—")+"</td>" +
@@ -1289,11 +1289,12 @@
       var owners = proposalOwners(p);
       return "<tr>" +
         '<td class="pt-owner'+(owners.length?"":" pt-muted")+'">'+ownerNameTagsHtml(owners)+"</td>" +
-        '<td class="pt-name">'+escapeHtml(p.name)+"</td>" +
+        '<td class="pt-name">'+escapeHtml(p.name)+(p.reopenCount ? ' <span class="muted mono reopen-marker" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "")+"</td>" +
         '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
+        '<td'+(p.bd?"":' class="pt-muted"')+'>'+escapeHtml(p.bd||"—")+"</td>" +
         '<td class="mono">'+(p.submitBy||"—")+"</td>" +
       "</tr>";
-    }).join("") : '<tr><td colspan="4" style="text-align:center; padding:22px; color:var(--text-faint); border-top:none;">No proposals submitted in this period yet.</td></tr>';
+    }).join("") : '<tr><td colspan="5" style="text-align:center; padding:22px; color:var(--text-faint); border-top:none;">No proposals submitted in this period yet.</td></tr>';
   }
 
   function renderPersonSnapshot(range, rangeMeetings){
@@ -1435,6 +1436,8 @@
           })() +
         "</select>"
       ) +
+      (!isGeneral && p.status==="Reopened" ? '<button class="icon-btn" data-action="mark-resubmitted" title="Mark resubmitted — clears it from the Pipeline"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></button>' : "") +
+      (!isGeneral && p.reopenCount ? '<span class="muted mono reopen-marker" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "") +
       '<span class="muted mono" style="font-size:11px; white-space:nowrap;">'+openCount+" open</span>" +
       (isGeneral ? "" : '<button class="icon-btn" data-action="delete-project" title="Delete proposal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>') +
     "</div>";
@@ -1449,10 +1452,10 @@
         '<input data-field="country" placeholder="Country" value="'+escapeHtml(p.country||"")+'">' +
       "</div>" +
       '<div class="proposal-dates-row">' +
-        '<label class="submit-by">Deadline <input type="date" data-field="deadline" value="'+(p.deadline||"")+'"></label>' +
+        '<label class="submit-by">Deadline <input type="date" data-field="deadline" value="'+(p.deadline||"")+'" placeholder="'+(p.status==="Reopened"?"New deadline":"")+'"></label>' +
         '<label class="submit-by">Submit by <input type="date" data-field="submitBy" value="'+(p.submitBy||"")+'"></label>' +
       "</div>" +
-      (p.status==="Reopened" ? '<button type="button" class="btn btn-primary reopen-resubmit-btn" data-action="mark-resubmitted">✓ Mark resubmitted — clears it from the Pipeline</button>' : "") +
+      (p.status==="Reopened" ? '<p class="muted" style="margin:6px 0 0; font-size:11px;">Reopened — set a new deadline above for this round; submit-by fills in once it\'s marked Submitted again.</p>' : "") +
       proposalHistoryHtml(p)
     );
 
@@ -1518,8 +1521,8 @@
       });
       var clearHistBtn = card.querySelector('[data-action="clear-history"]');
       if(clearHistBtn) clearHistBtn.addEventListener("click", function(){
-        if(confirm("Clear this proposal's history log? This can't be undone — the current status and dates stay as they are, only the log line is removed.")){
-          updateProject(pid, { history: [] });
+        if(confirm("Clear this proposal's history log and reopen count? This can't be undone — the current status and dates stay as they are, only the log and the ↺ count reset.")){
+          updateProject(pid, { history: [], reopenCount: 0 });
         }
       });
       var ownersPicker = card.querySelector('.proposal-owners-row .owner-picker[data-role="proposal-owners"]');
@@ -1592,7 +1595,7 @@
   }
 
   function addProject(data){
-    var payload = Object.assign({ status:"In Progress", client:"", bd:"", language:"", country:"", deadline:"", submitBy:"", owners:[], history:[], example:false, createdAt:Date.now() }, data);
+    var payload = Object.assign({ status:"In Progress", client:"", bd:"", language:"", country:"", deadline:"", submitBy:"", owners:[], history:[], reopenCount:0, example:false, createdAt:Date.now() }, data);
     if(state.db){ state.db.collection("projects").add(payload).catch(function(e){ console.warn(e); }); }
     else { payload.id = uid(); state.projects.push(payload); renderAll(); }
   }
@@ -1612,6 +1615,18 @@
       hist.push({ event: newStatus, date: todayStr() });
       patch.history = hist;
       if(newStatus==="Submitted") patch.submitBy = todayStr();
+      if(newStatus==="Reopened"){
+        // Reopening starts a fresh round: the old deadline/submit-by belonged to the
+        // round that just ended (they're preserved in the history log above), so clear
+        // them here rather than leaving them on screen looking like they still apply —
+        // that mixing of "old deadline, new submit-by" was exactly the confusing part.
+        patch.deadline = "";
+        patch.submitBy = "";
+        // reopenCount persists even after it's resubmitted and drops out of the Pipeline —
+        // it's the one thing that survives so a year-end look can find which clients/BD
+        // leads came back for the most rounds of edits.
+        patch.reopenCount = ((proj && proj.reopenCount) || 0) + 1;
+      }
     }
     updateProject(pid, patch);
   }
