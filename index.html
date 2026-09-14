@@ -1530,8 +1530,13 @@
       });
       var clearHistBtn = card.querySelector('[data-action="clear-history"]');
       if(clearHistBtn) clearHistBtn.addEventListener("click", function(){
-        if(confirm("Clear this proposal's history log and reopen count? This can't be undone — the current status and dates stay as they are, only the log and the ↺ count reset.")){
-          updateProject(pid, { history: [], reopenCount: 0 });
+        if(confirm("Clear this proposal's history log and reopen count? This can't be undone — the current status and dates stay as they are, only the log, the ↺ count, and the \"originally submitted\" record reset.")){
+          var proj = state.projects.find(function(x){ return x.id===pid; });
+          // Reset "originally submitted" to whatever's on the card right now, so the
+          // log starts truthfully clean from this point rather than keeping a stale
+          // (possibly wrong, e.g. from testing) original date around.
+          var freshFirstSubmitted = (proj && proj.status==="Submitted") ? (proj.submitBy || "") : "";
+          updateProject(pid, { history: [], reopenCount: 0, firstSubmittedAt: freshFirstSubmitted });
         }
       });
       var ownersPicker = card.querySelector('.proposal-owners-row .owner-picker[data-role="proposal-owners"]');
@@ -1638,6 +1643,14 @@
       var hist2 = (proj && proj.history) ? proj.history.slice() : [];
       hist2.push({ event:"Reopened", date: todayStr() });
       patch.history = hist2;
+      // The actual bug: a proposal that was already Submitted before this feature
+      // existed (or before it was ever reopened) has a real submit-by on file but no
+      // firstSubmittedAt yet — that submit-by IS the true original date. Capture it
+      // here, before it gets cleared below, so the next "Submitted" click correctly
+      // treats itself as a resubmission instead of stamping today over the real date.
+      if(proj && !proj.firstSubmittedAt && proj.submitBy){
+        patch.firstSubmittedAt = proj.submitBy;
+      }
       // Reopening starts a fresh round: the old deadline/submit-by belonged to the
       // round that just ended (still visible in the history log via firstSubmittedAt/
       // the log above), so clear them here rather than leaving them on screen looking
