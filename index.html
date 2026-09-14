@@ -353,6 +353,9 @@
   .proposal-dates-row label.submit-by input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; width:140px; font-weight:400; color:var(--text); }
   .proposal-dates-row label.submit-by input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
   .proposal-history{ font-size:11px; color:var(--text-faint); margin-top:4px; }
+  .link-btn{ border:none; background:none; padding:0; font-size:11px; color:var(--text-faint); text-decoration:underline; cursor:pointer; }
+  .link-btn:hover{ color:var(--accent-strong); }
+  .reopen-resubmit-btn{ font-size:11px; padding:4px 10px; margin-top:6px; }
   .proposal-owners-row{ display:flex; align-items:center; gap:8px; }
   .proposal-tasks{ background:var(--surface-2); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
   .proposal-task-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
@@ -821,7 +824,9 @@
       }
       return label+" "+fmtHistoryDate(h.date);
     });
-    return '<div class="proposal-history">'+escapeHtml(parts.join(" · "))+"</div>";
+    return '<div class="proposal-history">'+escapeHtml(parts.join(" · "))+
+      ' <button type="button" class="link-btn" data-action="clear-history" title="Remove this history log — for clearing out test clicks or mistakes">Clear history</button>' +
+    "</div>";
   }
 
   var GENERAL_PROJECT = { id:"general", name:"Other Tasks", client:"", status:"Active" };
@@ -1261,7 +1266,9 @@
       var owners = proposalOwners(p);
       return '<tr class="'+(pOverdue?"overdue":"")+'">' +
         '<td class="pt-owner'+(owners.length?"":" pt-muted")+'">'+ownerNameTagsHtml(owners)+"</td>" +
-        '<td class="pt-status"><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span></td>" +
+        '<td class="pt-status"><span class="pill '+pstatusClass(p.status)+'">'+p.status+"</span>" +
+          (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="resubmit" data-id="'+p.id+'" title="Mark resubmitted — clears it from the Pipeline">✓ resubmitted</button>' : "") +
+        "</td>" +
         '<td class="pt-name">'+escapeHtml(p.name)+"</td>" +
         '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
         '<td'+(p.bd?"":' class="pt-muted"')+'>'+escapeHtml(p.bd||"—")+"</td>" +
@@ -1445,6 +1452,7 @@
         '<label class="submit-by">Deadline <input type="date" data-field="deadline" value="'+(p.deadline||"")+'"></label>' +
         '<label class="submit-by">Submit by <input type="date" data-field="submitBy" value="'+(p.submitBy||"")+'"></label>' +
       "</div>" +
+      (p.status==="Reopened" ? '<button type="button" class="btn btn-primary reopen-resubmit-btn" data-action="mark-resubmitted">✓ Mark resubmitted — clears it from the Pipeline</button>' : "") +
       proposalHistoryHtml(p)
     );
 
@@ -1491,23 +1499,28 @@
         var evt = (el.tagName==="SELECT" || el.type==="date") ? "change" : "blur";
         el.addEventListener(evt, function(){
           var val = el.tagName==="DIV" ? el.textContent.trim() : el.value;
-          if(field==="status") el.className = "pill-select "+pstatusClass(val);
-          var patch = {}; patch[field]=val;
-          if(field==="status" && (val==="Submitted" || val==="Reopened")){
-            var proj = state.projects.find(function(x){ return x.id===pid; });
-            var hist = (proj && proj.history) ? proj.history.slice() : [];
-            hist.push({ event: val, date: todayStr() });
-            patch.history = hist;
-            // submit-by always tracks the most recent submission (for period stats);
-            // the original submit date lives on in the history line above, not overwritten.
-            if(val==="Submitted") patch.submitBy = todayStr();
+          if(field==="status"){
+            el.className = "pill-select "+pstatusClass(val);
+            transitionProposalStatus(pid, val);
+            return;
           }
+          var patch = {}; patch[field]=val;
           updateProject(pid, patch);
         });
       });
       var delBtn = card.querySelector('[data-action="delete-project"]');
       if(delBtn) delBtn.addEventListener("click", function(){
         if(confirm("Delete this proposal? Its tasks will move to \"Other Tasks\".")) deleteProject(pid);
+      });
+      var resubmitBtn = card.querySelector('[data-action="mark-resubmitted"]');
+      if(resubmitBtn) resubmitBtn.addEventListener("click", function(){
+        transitionProposalStatus(pid, "Submitted");
+      });
+      var clearHistBtn = card.querySelector('[data-action="clear-history"]');
+      if(clearHistBtn) clearHistBtn.addEventListener("click", function(){
+        if(confirm("Clear this proposal's history log? This can't be undone — the current status and dates stay as they are, only the log line is removed.")){
+          updateProject(pid, { history: [] });
+        }
       });
       var ownersPicker = card.querySelector('.proposal-owners-row .owner-picker[data-role="proposal-owners"]');
       if(ownersPicker){
@@ -1586,6 +1599,21 @@
   function updateProject(id, patch){
     if(state.db){ state.db.collection("projects").doc(id).update(patch).catch(function(e){ console.warn(e); }); }
     else { var p=state.projects.find(function(x){ return x.id===id; }); if(p) Object.assign(p, patch); renderAll(); }
+  }
+  /* Shared by the status dropdown on a proposal card and the "Mark resubmitted"
+     quick-action (card + Pipeline table) — moving to Submitted always clears a
+     proposal out of the active Pipeline immediately, same as finishing any other
+     proposal; moving to Reopened logs it without touching the original submit date. */
+  function transitionProposalStatus(pid, newStatus){
+    var proj = state.projects.find(function(x){ return x.id===pid; });
+    var patch = { status: newStatus };
+    if(newStatus==="Submitted" || newStatus==="Reopened"){
+      var hist = (proj && proj.history) ? proj.history.slice() : [];
+      hist.push({ event: newStatus, date: todayStr() });
+      patch.history = hist;
+      if(newStatus==="Submitted") patch.submitBy = todayStr();
+    }
+    updateProject(pid, patch);
   }
   function deleteProject(id){
     state.tasks.filter(function(t){ return t.project===id; }).forEach(function(t){ updateTask(t.id, { project:"general" }); });
@@ -1826,6 +1854,11 @@
   /* ---------------- wiring ---------------- */
   document.getElementById("nav").addEventListener("click", function(e){
     var btn = e.target.closest(".nav-item"); if(btn) setView(btn.dataset.view);
+  });
+
+  document.getElementById("pipelineTableBody").addEventListener("click", function(e){
+    var btn = e.target.closest('[data-action="resubmit"]');
+    if(btn) transitionProposalStatus(btn.dataset.id, "Submitted");
   });
 
   document.getElementById("brandMark").addEventListener("click", function(){
