@@ -31,6 +31,8 @@
     --slate-soft:#E7ECEA;
     --hold:#5B4B9E;
     --hold-soft:#E7E3F5;
+    --reopen:#C1541C;
+    --reopen-soft:#F7E1D2;
     --shadow: 0 1px 2px rgba(20,30,28,0.06), 0 8px 24px -12px rgba(20,30,28,0.18);
     --focus: 0 0 0 3px rgba(31,111,107,0.28);
     color-scheme: light;
@@ -59,6 +61,8 @@
       --slate-soft:#233130;
       --hold:#B4A6E8;
       --hold-soft:#2C2547;
+      --reopen:#F0975B;
+      --reopen-soft:#402A1A;
       --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.55);
       --focus: 0 0 0 3px rgba(87,194,186,0.35);
       color-scheme: dark;
@@ -87,6 +91,8 @@
     --slate-soft:#233130;
     --hold:#B4A6E8;
     --hold-soft:#2C2547;
+    --reopen:#F0975B;
+    --reopen-soft:#402A1A;
     --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 28px -14px rgba(0,0,0,0.55);
     --focus: 0 0 0 3px rgba(87,194,186,0.35);
     color-scheme: dark;
@@ -232,9 +238,10 @@
   .pill.overdue{ background:var(--red-soft); color:var(--red); }
   .pill.example{ background:var(--surface-2); color:var(--text-faint); border:1px dashed var(--border-strong); }
   .pill.pstatus-active{ background:var(--accent-soft); color:var(--accent-strong); }
-  .pill.pstatus-inprogress{ background:var(--accent-soft); color:var(--accent-strong); }
+  .pill.pstatus-inprogress{ background:var(--amber-soft); color:var(--amber); }
   .pill.pstatus-onhold{ background:var(--hold-soft); color:var(--hold); }
-  .pill.pstatus-submitted{ background:var(--amber-soft); color:var(--amber); }
+  .pill.pstatus-reopened{ background:var(--reopen-soft); color:var(--reopen); }
+  .pill.pstatus-submitted{ background:var(--green-soft); color:var(--green); }
   .pill.pstatus-closed{ background:var(--slate-soft); color:var(--slate); }
   .project-tag{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; color:var(--accent-strong); background:var(--accent-soft); border-radius:6px; padding:2px 8px; }
 
@@ -247,9 +254,10 @@
   select.status-blocked{ background-color:var(--amber-soft); color:var(--amber); }
   select.status-done{ background-color:var(--green-soft); color:var(--green); }
   select.pstatus-active{ background-color:var(--accent-soft); color:var(--accent-strong); }
-  select.pstatus-inprogress{ background-color:var(--accent-soft); color:var(--accent-strong); }
+  select.pstatus-inprogress{ background-color:var(--amber-soft); color:var(--amber); }
   select.pstatus-onhold{ background-color:var(--hold-soft); color:var(--hold); }
-  select.pstatus-submitted{ background-color:var(--amber-soft); color:var(--amber); }
+  select.pstatus-reopened{ background-color:var(--reopen-soft); color:var(--reopen); }
+  select.pstatus-submitted{ background-color:var(--green-soft); color:var(--green); }
   select.pstatus-closed{ background-color:var(--slate-soft); color:var(--slate); }
 
   /* ---------- Filter bar ---------- */
@@ -344,6 +352,7 @@
   .proposal-dates-row label.submit-by{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--text-faint); white-space:nowrap; }
   .proposal-dates-row label.submit-by input{ border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; width:140px; font-weight:400; color:var(--text); }
   .proposal-dates-row label.submit-by input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
+  .proposal-history{ font-size:11px; color:var(--text-faint); margin-top:4px; }
   .proposal-owners-row{ display:flex; align-items:center; gap:8px; }
   .proposal-tasks{ background:var(--surface-2); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
   .proposal-task-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
@@ -791,6 +800,29 @@
 
   function statusClass(s){ return "status-"+String(s||"Not Started").toLowerCase().replace(/\s+/g,""); }
   function pstatusClass(s){ return "pstatus-"+String(s||"In Progress").toLowerCase().replace(/\s+/g,""); }
+
+  /* A proposal that comes back for edits after being submitted gets a short,
+     read-only history line instead of losing its original submit date —
+     e.g. "Originally submitted Jan 12, 2026 · Reopened Mar 1, 2026 · Resubmitted Mar 10, 2026". */
+  function fmtHistoryDate(iso){
+    var d = parseISODate(iso);
+    if(!d) return iso || "";
+    return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+  }
+  function proposalHistoryHtml(p){
+    var hist = p.history || [];
+    if(!hist.length) return "";
+    var seenSubmitted = false;
+    var parts = hist.map(function(h){
+      var label = h.event;
+      if(h.event==="Submitted"){
+        label = seenSubmitted ? "Resubmitted" : "Originally submitted";
+        seenSubmitted = true;
+      }
+      return label+" "+fmtHistoryDate(h.date);
+    });
+    return '<div class="proposal-history">'+escapeHtml(parts.join(" · "))+"</div>";
+  }
 
   var GENERAL_PROJECT = { id:"general", name:"Other Tasks", client:"", status:"Active" };
 
@@ -1390,7 +1422,7 @@
       (isGeneral ? "" :
         '<select class="pill-select '+pstatusClass(p.status)+'" data-field="status">' +
           (function(){
-            var opts = ["In Progress","On Hold","Submitted"];
+            var opts = ["In Progress","On Hold","Reopened","Submitted"];
             if(p.status && opts.indexOf(p.status)===-1) opts = [p.status].concat(opts);
             return opts.map(function(s){ return '<option value="'+s+'" '+(s===p.status?"selected":"")+">"+s+"</option>"; }).join("");
           })() +
@@ -1412,7 +1444,8 @@
       '<div class="proposal-dates-row">' +
         '<label class="submit-by">Deadline <input type="date" data-field="deadline" value="'+(p.deadline||"")+'"></label>' +
         '<label class="submit-by">Submit by <input type="date" data-field="submitBy" value="'+(p.submitBy||"")+'"></label>' +
-      "</div>"
+      "</div>" +
+      proposalHistoryHtml(p)
     );
 
     var ownersRow = isGeneral ? "" : (
@@ -1460,9 +1493,14 @@
           var val = el.tagName==="DIV" ? el.textContent.trim() : el.value;
           if(field==="status") el.className = "pill-select "+pstatusClass(val);
           var patch = {}; patch[field]=val;
-          if(field==="status" && val==="Submitted"){
+          if(field==="status" && (val==="Submitted" || val==="Reopened")){
             var proj = state.projects.find(function(x){ return x.id===pid; });
-            if(proj && !proj.submitBy) patch.submitBy = todayStr();
+            var hist = (proj && proj.history) ? proj.history.slice() : [];
+            hist.push({ event: val, date: todayStr() });
+            patch.history = hist;
+            // submit-by always tracks the most recent submission (for period stats);
+            // the original submit date lives on in the history line above, not overwritten.
+            if(val==="Submitted") patch.submitBy = todayStr();
           }
           updateProject(pid, patch);
         });
@@ -1541,7 +1579,7 @@
   }
 
   function addProject(data){
-    var payload = Object.assign({ status:"In Progress", client:"", bd:"", language:"", country:"", deadline:"", submitBy:"", owners:[], example:false, createdAt:Date.now() }, data);
+    var payload = Object.assign({ status:"In Progress", client:"", bd:"", language:"", country:"", deadline:"", submitBy:"", owners:[], history:[], example:false, createdAt:Date.now() }, data);
     if(state.db){ state.db.collection("projects").add(payload).catch(function(e){ console.warn(e); }); }
     else { payload.id = uid(); state.projects.push(payload); renderAll(); }
   }
@@ -2020,6 +2058,7 @@
       deadline: document.getElementById("newProjectDeadline").value || "",
       submitBy: newSubmitBy,
       owners: owners,
+      history: newStatus==="Submitted" ? [{ event:"Submitted", date:newSubmitBy }] : [],
       status: newStatus
     });
     e.target.reset();
