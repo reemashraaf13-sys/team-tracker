@@ -355,6 +355,22 @@
   .link-btn{ border:none; background:none; padding:0; font-size:11px; color:var(--text-faint); text-decoration:underline; cursor:pointer; }
   .link-btn:hover{ color:var(--accent-strong); }
   .reopen-marker{ font-size:11px; color:var(--reopen); background:var(--reopen-soft); border-radius:6px; padding:2px 6px; }
+
+  /* ---------- Dashboard QC notes (sticky notes next to the Pipeline table) ---------- */
+  .notes-card{ display:flex; flex-direction:column; }
+  .note-form{ padding:14px 20px 10px; display:flex; flex-direction:column; gap:8px; }
+  .note-form textarea{ border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; padding:8px 10px; font-size:12.5px; min-height:54px; resize:vertical; font-family:inherit; }
+  .note-form textarea:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); }
+  .notes-list{ display:flex; flex-direction:column; gap:12px; padding:4px 18px 18px; max-height:520px; overflow-y:auto; }
+  .note-item{ background:#FBE8A6; color:#4A3B00; border-radius:3px; padding:10px 12px; box-shadow:0 3px 7px rgba(0,0,0,.16); font-size:12.5px; line-height:1.45; }
+  .note-item:nth-child(3n+1){ transform:rotate(-0.8deg); }
+  .note-item:nth-child(3n+2){ transform:rotate(0.6deg); }
+  .note-item:nth-child(3n){ transform:rotate(-0.3deg); }
+  .note-item .note-text{ white-space:pre-wrap; overflow-wrap:anywhere; margin:0 0 8px; font-weight:600; }
+  .note-item .note-meta{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:10.5px; font-weight:700; opacity:.65; }
+  .note-item .note-del{ border:none; background:transparent; color:inherit; opacity:.55; cursor:pointer; padding:2px; border-radius:4px; display:flex; flex:none; }
+  .note-item .note-del:hover{ opacity:1; background:rgba(0,0,0,.08); }
+  .notes-empty{ padding:2px 20px 20px; font-size:12px; color:var(--text-faint); }
   .proposal-owners-row{ display:flex; align-items:center; gap:8px; }
   .proposal-tasks{ background:var(--surface-2); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
   .proposal-task-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
@@ -536,15 +552,32 @@
         <div class="tile slate"><div class="tile-label">Tasks due</div><div class="tile-value" id="statTasksDue">0</div><div class="tile-sub" id="statTasksDueSub">&nbsp;</div></div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><h2>Proposal Pipeline</h2><span class="muted" id="pipelineCount"></span></div>
-        <div style="overflow-x:auto; padding:14px 20px 18px;">
-          <table class="pipeline-table" id="pipelineTable">
-            <thead>
-              <tr><th>Owners</th><th class="pt-status">Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Deadline</th><th>Submit by</th></tr>
-            </thead>
-            <tbody id="pipelineTableBody"></tbody>
-          </table>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-head">
+            <h2>Proposal Pipeline</h2>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="muted" id="pipelineCount"></span>
+              <button type="button" class="btn btn-primary" id="openAddProjectBtn" style="padding:6px 11px; font-size:12px;">+ Add proposal</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto; padding:14px 20px 18px;">
+            <table class="pipeline-table" id="pipelineTable">
+              <thead>
+                <tr><th>Owners</th><th class="pt-status">Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Deadline</th><th>Submit by</th></tr>
+              </thead>
+              <tbody id="pipelineTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card notes-card">
+          <div class="card-head"><h2>Team Notes</h2><span class="muted" id="notesCount"></span></div>
+          <form id="addNoteForm" class="note-form">
+            <textarea id="newNoteText" placeholder="Quality-control remark for the team — e.g. &quot;Double-check pricing table before sending&quot;" required></textarea>
+            <button type="submit" class="btn btn-primary" style="align-self:flex-end;">Pin note</button>
+          </form>
+          <div class="notes-list" id="notesList"></div>
         </div>
       </div>
 
@@ -635,6 +668,14 @@
         <div id="projectsList"></div>
       </div>
       <div class="empty-state" id="projectsEmpty" hidden><strong>No proposals yet</strong>Add your first one above.</div>
+
+      <div class="card" id="completedTasksCard">
+        <div class="card-head" id="completedTasksToggle" style="cursor:pointer; user-select:none;">
+          <h2><span id="completedTasksChevron">▸</span> Completed tasks</h2>
+          <span class="muted" id="completedTasksCount"></span>
+        </div>
+        <div id="completedTasksList" hidden></div>
+      </div>
     </section>
 
     <!-- TEAM -->
@@ -680,6 +721,36 @@
       <button class="btn btn-ghost" id="undoImportCancelBtn">Cancel</button>
       <button class="btn" id="undoImportConfirmBtn" style="background:var(--red); border-color:var(--red); color:#fff;" disabled>Remove these proposals</button>
     </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addProjectModal" hidden>
+  <div class="modal" style="max-width:480px;">
+    <h2>Add proposal</h2>
+    <form id="dashAddProjectForm">
+      <div class="add-form" style="padding:0; background:none; border:none;">
+        <input type="text" class="task-title" id="dashNewProjectName" placeholder="Proposal name — e.g. Al Rajhi Takaful Leadership Program" required style="flex:1 1 100%;">
+        <input type="text" id="dashNewProjectClient" placeholder="Client *" required style="width:150px;">
+        <input type="text" id="dashNewProjectBd" placeholder="BD" style="width:120px;">
+        <input type="text" id="dashNewProjectLanguage" placeholder="Language" style="width:110px;">
+        <input type="text" id="dashNewProjectCountry" placeholder="Country" style="width:110px;">
+        <label class="date-field">Deadline <input type="date" id="dashNewProjectDeadline" required></label>
+        <label class="date-field">Submit by <input type="date" id="dashNewProjectSubmitBy"></label>
+        <select id="dashNewProjectStatus">
+          <option value="In Progress" selected>In Progress</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Submitted">Submitted</option>
+        </select>
+        <div style="flex:1 1 100%; display:flex; align-items:center; gap:8px;">
+          <span class="muted" style="font-size:11.5px;">Owners:</span>
+          <div class="owner-picker" id="dashNewProjectOwners"></div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+        <button type="button" class="btn btn-ghost" id="addProjectCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add proposal</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -813,6 +884,7 @@
     projects: [],
     tasks: [],
     meetings: [],
+    notes: [],
     me: localStorage_get("cadence.me"),
     rangeMode: "week",
     refDate: new Date(),
@@ -956,6 +1028,11 @@
       renderAll();
     }, function(e){ console.warn("projects error", e); });
 
+    state.db.collection("notes").onSnapshot(function(snap){
+      state.notes = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+      renderAll();
+    }, function(e){ console.warn("notes error", e); });
+
     state.db.doc("team/members").onSnapshot(function(snap){
       if(snap.exists){
         state.team = snap.data();
@@ -1076,7 +1153,9 @@
     renderTeam();
     renderWhoamiOwnerLists();
     renderDashboard();
+    renderNotes();
     renderProjects();
+    renderCompletedTasks();
     renderMeetings();
     renderWhoami();
     renderBrand();
@@ -1188,6 +1267,12 @@
     gtOwners.innerHTML = ownerChipsHtml(gtSelected);
     wireOwnerPickerToggle(gtOwners);
 
+    var dnpOwners = document.getElementById("dashNewProjectOwners");
+    var dnpSelected = dnpOwners.dataset.selected ? JSON.parse(dnpOwners.dataset.selected) : (state.me ? [state.me] : []);
+    dnpOwners.dataset.selected = JSON.stringify(dnpSelected);
+    dnpOwners.innerHTML = ownerChipsHtml(dnpSelected);
+    wireOwnerPickerToggle(dnpOwners);
+
     var clientList = document.getElementById("clientSuggestions");
     var clients = Array.from(new Set(state.projects.map(function(p){ return p.client; }).filter(Boolean)));
     clientList.innerHTML = clients.map(function(c){ return '<option value="'+escapeHtml(c)+'">'; }).join("");
@@ -1199,6 +1284,28 @@
   }
 
   /* ---------------- dashboard ---------------- */
+  function fmtNoteTime(ts){
+    if(!ts) return "";
+    var d = new Date(ts);
+    return d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+" · "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+  }
+  function renderNotes(){
+    var listEl = document.getElementById("notesList");
+    if(!listEl) return;
+    var notes = state.notes.slice().sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    document.getElementById("notesCount").textContent = notes.length ? notes.length+" pinned" : "";
+    listEl.innerHTML = notes.length ? notes.map(function(n){
+      var author = n.authorId ? memberById(n.authorId) : null;
+      return '<div class="note-item" data-id="'+n.id+'">' +
+        '<p class="note-text">'+escapeHtml(n.text)+"</p>" +
+        '<div class="note-meta">' +
+          "<span>"+escapeHtml(author ? author.name : "Team")+" · "+fmtNoteTime(n.createdAt)+"</span>" +
+          '<button type="button" class="note-del" data-action="delete-note" data-id="'+n.id+'" title="Remove note"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+        "</div>" +
+      "</div>";
+    }).join("") : '<p class="notes-empty">No notes pinned yet — add a quick quality-control remark above and the whole team will see it here.</p>';
+  }
+
   function renderDashboard(){
     var range = state.currentRange;
     var rangeWord = state.rangeMode==="week" ? "this week" : state.rangeMode==="month" ? "this month" : "this year";
@@ -1402,10 +1509,51 @@
     restoreEditFocus(listEl, focusState);
   }
 
+  var completedTasksOpen = false;
+  /* Finished "Other Tasks" (not tied to any proposal) land here instead of
+     staying in the main "Other Tasks" card forever. Collapsed by default so
+     it stays out of the way; still fully editable in case something was
+     marked Done by mistake. */
+  function renderCompletedTasks(){
+    var listEl = document.getElementById("completedTasksList");
+    var done = state.tasks.filter(function(t){ return (t.project||"general")==="general" && t.status==="Done"; })
+      .sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+    document.getElementById("completedTasksCount").textContent = done.length ? done.length+" done" : "";
+    document.getElementById("completedTasksChevron").textContent = completedTasksOpen ? "▾" : "▸";
+
+    var focusState = captureEditFocus(listEl);
+    listEl.innerHTML = done.length
+      ? '<div class="proposal-card" data-id="completed-archive" style="border:none; box-shadow:none; background:none; padding:0;"><div class="proposal-tasks" style="padding:4px 20px 18px;">'+done.map(taskRowHtml).join("")+"</div></div>"
+      : '<p class="muted" style="margin:0; font-size:12px; padding:0 20px 18px;">Nothing completed yet — finished "Other Tasks" items land here instead of piling up above.</p>';
+    listEl.hidden = !completedTasksOpen;
+    var archiveCard = listEl.querySelector(".proposal-card");
+    if(archiveCard) wireProposalCard(archiveCard);
+    restoreEditFocus(listEl, focusState);
+  }
+
+  function taskRowHtml(t){
+    var overdue = isOverdue(t);
+    var extraStyle = (overdue ? "box-shadow:inset 3px 0 0 var(--red);" : "") + (t.status==="Done" ? "opacity:.6;" : "");
+    return '<div class="proposal-task-row" data-id="'+t.id+'" style="'+extraStyle+'">' +
+      '<div class="task-title-text" contenteditable="true" data-field="title">'+escapeHtml(t.title)+"</div>" +
+      '<div class="owner-picker" data-role="task-owners">'+ownerChipsHtml(taskOwners(t))+"</div>" +
+      '<input type="date" class="deadline-input" data-field="deadline" value="'+(t.deadline||"")+'">' +
+      '<select class="pill-select '+statusClass(t.status)+'" data-field="status">' +
+        ["Not Started","In Progress","Blocked","Done"].map(function(s){ return '<option value="'+s+'" '+(s===t.status?"selected":"")+">"+s+"</option>"; }).join("") +
+      "</select>" +
+      '<button class="icon-btn" data-action="delete-task" title="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>' +
+    "</div>";
+  }
+
   function renderProposalCardHtml(p){
     var isGeneral = p.id === "general";
     var pTasks = state.tasks.filter(function(t){ return (t.project||"general")===p.id; })
       .sort(function(a,b){ var da=a.deadline||"9999", db_=b.deadline||"9999"; return da<db_?-1:(da>db_?1:0); });
+    // "Other Tasks" is the one place tasks would otherwise pile up forever —
+    // finished ones move to the Completed tasks archive at the bottom of the
+    // page instead of staying in this card. Tasks that belong to a real
+    // proposal stay put either way, since they're part of that proposal's record.
+    if(isGeneral) pTasks = pTasks.filter(function(t){ return t.status!=="Done"; });
     var openCount = pTasks.filter(function(t){ return t.status!=="Done"; }).length;
 
     var head = '<div class="proposal-top">' +
@@ -1451,19 +1599,7 @@
       "</div>"
     );
 
-    var taskRows = pTasks.length ? pTasks.map(function(t){
-      var overdue = isOverdue(t);
-      var extraStyle = (overdue ? "box-shadow:inset 3px 0 0 var(--red);" : "") + (t.status==="Done" ? "opacity:.6;" : "");
-      return '<div class="proposal-task-row" data-id="'+t.id+'" style="'+extraStyle+'">' +
-        '<div class="task-title-text" contenteditable="true" data-field="title">'+escapeHtml(t.title)+"</div>" +
-        '<div class="owner-picker" data-role="task-owners">'+ownerChipsHtml(taskOwners(t))+"</div>" +
-        '<input type="date" class="deadline-input" data-field="deadline" value="'+(t.deadline||"")+'">' +
-        '<select class="pill-select '+statusClass(t.status)+'" data-field="status">' +
-          ["Not Started","In Progress","Blocked","Done"].map(function(s){ return '<option value="'+s+'" '+(s===t.status?"selected":"")+">"+s+"</option>"; }).join("") +
-        "</select>" +
-        '<button class="icon-btn" data-action="delete-task" title="Delete task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>' +
-      "</div>";
-    }).join("") : '<div class="proposal-tasks-empty">No extra tasks yet.</div>';
+    var taskRows = pTasks.length ? pTasks.map(taskRowHtml).join("") : '<div class="proposal-tasks-empty">No extra tasks yet.</div>';
 
     var addTaskRow = '<div class="add-task-row" data-pid="'+p.id+'">' +
         '<input type="text" placeholder="Add a task…" data-role="new-task-title">' +
@@ -1662,6 +1798,19 @@
   function deleteTask(id){
     if(state.db){ state.db.collection("tasks").doc(id).delete().catch(function(e){ console.warn(e); }); }
     else { state.tasks = state.tasks.filter(function(t){ return t.id!==id; }); renderAll(); }
+  }
+
+  /* Quick QC / heads-up notes pinned on the Dashboard — not tied to any one
+     proposal, meant for short "pay attention to this" remarks (mainly from
+     Joe) that the whole team sees as soon as they open the tracker. */
+  function addNote(text){
+    var payload = { text: text, authorId: state.me || null, createdAt: Date.now() };
+    if(state.db){ state.db.collection("notes").add(payload).catch(function(e){ console.warn(e); }); }
+    else { payload.id = uid(); state.notes.push(payload); renderAll(); }
+  }
+  function deleteNote(id){
+    if(state.db){ state.db.collection("notes").doc(id).delete().catch(function(e){ console.warn(e); }); }
+    else { state.notes = state.notes.filter(function(n){ return n.id!==id; }); renderAll(); }
   }
 
   /* ---------------- meetings ---------------- */
@@ -2158,6 +2307,70 @@
 
   document.getElementById("filterMeetingClient").addEventListener("change", function(){ state.filters.meetingClient = this.value; renderMeetings(); });
   document.getElementById("filterProjectOwner").addEventListener("change", function(){ state.filters.projectOwner = this.value; renderProjects(); });
+
+  document.getElementById("addNoteForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var textEl = document.getElementById("newNoteText");
+    var text = textEl.value.trim();
+    if(!text) return;
+    addNote(text);
+    e.target.reset();
+    textEl.focus();
+  });
+  document.getElementById("notesList").addEventListener("click", function(e){
+    var btn = e.target.closest('[data-action="delete-note"]');
+    if(!btn) return;
+    if(confirm("Remove this note?")) deleteNote(btn.dataset.id);
+  });
+
+  document.getElementById("completedTasksToggle").addEventListener("click", function(){
+    completedTasksOpen = !completedTasksOpen;
+    renderCompletedTasks();
+  });
+
+  /* "Add proposal" modal — same fields/payload as the Proposals-tab form,
+     just reachable straight from the Dashboard so adding one doesn't need
+     a tab switch. */
+  function openAddProjectModal(){
+    document.getElementById("addProjectModal").hidden = false;
+    document.getElementById("dashNewProjectName").focus();
+  }
+  function closeAddProjectModal(){
+    document.getElementById("addProjectModal").hidden = true;
+  }
+  document.getElementById("openAddProjectBtn").addEventListener("click", openAddProjectModal);
+  document.getElementById("addProjectCancelBtn").addEventListener("click", closeAddProjectModal);
+  document.getElementById("addProjectModal").addEventListener("click", function(e){
+    if(e.target.id==="addProjectModal") closeAddProjectModal();
+  });
+  document.getElementById("dashAddProjectForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var name = document.getElementById("dashNewProjectName").value.trim();
+    var client = document.getElementById("dashNewProjectClient").value.trim();
+    if(!name || !client) return;
+    var dnpOwners = document.getElementById("dashNewProjectOwners");
+    var owners = dnpOwners.dataset.selected ? JSON.parse(dnpOwners.dataset.selected) : (state.me ? [state.me] : []);
+    var newStatus = document.getElementById("dashNewProjectStatus").value;
+    var newSubmitBy = document.getElementById("dashNewProjectSubmitBy").value || "";
+    if(newStatus==="Submitted" && !newSubmitBy) newSubmitBy = todayStr();
+    addProject({
+      name: name,
+      client: client,
+      bd: document.getElementById("dashNewProjectBd").value.trim(),
+      language: document.getElementById("dashNewProjectLanguage").value.trim(),
+      country: document.getElementById("dashNewProjectCountry").value.trim(),
+      deadline: document.getElementById("dashNewProjectDeadline").value || "",
+      submitBy: newSubmitBy,
+      owners: owners,
+      status: newStatus
+    });
+    e.target.reset();
+    document.getElementById("dashNewProjectStatus").value = "In Progress";
+    dnpOwners.dataset.selected = JSON.stringify(state.me ? [state.me] : []);
+    dnpOwners.innerHTML = ownerChipsHtml(state.me ? [state.me] : []);
+    wireOwnerPickerToggle(dnpOwners);
+    closeAddProjectModal();
+  });
 
   document.getElementById("addMeetingForm").addEventListener("submit", function(e){
     e.preventDefault();
