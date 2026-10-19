@@ -356,13 +356,13 @@
   .link-btn:hover{ color:var(--accent-strong); }
   .reopen-marker{ font-size:11px; color:var(--reopen); background:var(--reopen-soft); border-radius:6px; padding:2px 6px; }
 
-  /* ---------- Dashboard QC notes (sticky notes next to the Pipeline table) ---------- */
+  /* ---------- Notes page (own tab — a corkboard of QC/heads-up notes) ---------- */
   .notes-card{ display:flex; flex-direction:column; }
   .note-form{ padding:14px 20px 10px; display:flex; flex-direction:column; gap:8px; }
   .note-form textarea{ border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; padding:8px 10px; font-size:12.5px; min-height:54px; resize:vertical; font-family:inherit; }
   .note-form textarea:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); }
-  .notes-list{ display:flex; flex-direction:column; gap:12px; padding:4px 18px 18px; max-height:520px; overflow-y:auto; }
-  .note-item{ background:#FBE8A6; color:#4A3B00; border-radius:3px; padding:10px 12px; box-shadow:0 3px 7px rgba(0,0,0,.16); font-size:12.5px; line-height:1.45; }
+  .notes-board{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:18px; align-items:start; padding:4px 2px 18px; }
+  .note-item{ background:#FBE8A6; color:#4A3B00; border-radius:3px; padding:12px 14px; box-shadow:0 3px 7px rgba(0,0,0,.16); font-size:13px; line-height:1.45; }
   .note-item:nth-child(3n+1){ transform:rotate(-0.8deg); }
   .note-item:nth-child(3n+2){ transform:rotate(0.6deg); }
   .note-item:nth-child(3n){ transform:rotate(-0.3deg); }
@@ -503,6 +503,11 @@
         Meetings
         <span class="count" id="navCountMeetings">0</span>
       </button>
+      <button class="nav-item" data-view="notes">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+        Notes
+        <span class="count" id="navCountNotes">0</span>
+      </button>
       <button class="nav-item" data-view="team">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="18" cy="8.5" r="2.4"/><path d="M16.3 14.2c2.7.4 4.7 2.4 4.7 5.3"/></svg>
         Team
@@ -552,32 +557,21 @@
         <div class="tile slate"><div class="tile-label">Tasks due</div><div class="tile-value" id="statTasksDue">0</div><div class="tile-sub" id="statTasksDueSub">&nbsp;</div></div>
       </div>
 
-      <div class="two-col">
-        <div class="card">
-          <div class="card-head">
-            <h2>Proposal Pipeline</h2>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span class="muted" id="pipelineCount"></span>
-              <button type="button" class="btn btn-primary" id="openAddProjectBtn" style="padding:6px 11px; font-size:12px;">+ Add proposal</button>
-            </div>
-          </div>
-          <div style="overflow-x:auto; padding:14px 20px 18px;">
-            <table class="pipeline-table" id="pipelineTable">
-              <thead>
-                <tr><th>Owners</th><th class="pt-status">Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Deadline</th><th>Submit by</th></tr>
-              </thead>
-              <tbody id="pipelineTableBody"></tbody>
-            </table>
+      <div class="card">
+        <div class="card-head">
+          <h2>Proposal Pipeline</h2>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="muted" id="pipelineCount"></span>
+            <button type="button" class="btn btn-primary" id="openAddProjectBtn" style="padding:6px 11px; font-size:12px;">+ Add proposal</button>
           </div>
         </div>
-
-        <div class="card notes-card">
-          <div class="card-head"><h2>Team Notes</h2><span class="muted" id="notesCount"></span></div>
-          <form id="addNoteForm" class="note-form">
-            <textarea id="newNoteText" placeholder="Quality-control remark for the team — e.g. &quot;Double-check pricing table before sending&quot;" required></textarea>
-            <button type="submit" class="btn btn-primary" style="align-self:flex-end;">Pin note</button>
-          </form>
-          <div class="notes-list" id="notesList"></div>
+        <div style="overflow-x:auto; padding:14px 20px 18px;">
+          <table class="pipeline-table" id="pipelineTable">
+            <thead>
+              <tr><th>Owners</th><th class="pt-status">Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Deadline</th><th>Submit by</th></tr>
+            </thead>
+            <tbody id="pipelineTableBody"></tbody>
+          </table>
         </div>
       </div>
 
@@ -624,6 +618,18 @@
 
       <div class="meeting-list" id="meetingsList"></div>
       <div class="empty-state" id="meetingsEmpty" hidden><strong>No meetings yet</strong>Add your first one above.</div>
+    </section>
+
+    <!-- NOTES -->
+    <section class="view" id="view-notes" hidden>
+      <div class="card card-pad">
+        <form id="addNoteForm" class="note-form" style="padding:0;">
+          <textarea id="newNoteText" placeholder="Quality-control remark for the team — e.g. &quot;Double-check pricing table before sending&quot;" required></textarea>
+          <button type="submit" class="btn btn-primary" style="align-self:flex-end;">Pin note</button>
+        </form>
+      </div>
+      <div class="card-head" style="padding:0 2px;"><h2>Pinned notes</h2><span class="muted" id="notesCount"></span></div>
+      <div class="notes-board" id="notesList"></div>
     </section>
 
     <!-- PROPOSALS (merged with tasks) -->
@@ -1182,6 +1188,7 @@
   function renderNavCounts(){
     document.getElementById("navCountMeetings").textContent = state.meetings.length;
     document.getElementById("navCountProjects").textContent = activeProjectsList().length;
+    document.getElementById("navCountNotes").textContent = state.notes.length;
   }
 
   function renderRangeNav(){
@@ -2008,6 +2015,7 @@
     dashboard: { title:"Dashboard", sub:"This week at a glance, for the whole team." },
     meetings: { title:"Meetings", sub:"Notes and action items from your weekly syncs." },
     projects: { title:"Proposals", sub:"Every proposal in flight — client details, submission deadlines, and any extra to-dos, all in one place." },
+    notes: { title:"Notes", sub:"Quality-control remarks and heads-up notes, pinned for the whole team to see." },
     team: { title:"Team", sub:"" }
   };
   function setView(v){
