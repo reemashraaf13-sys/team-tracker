@@ -661,17 +661,6 @@
           </div>
         </form>
       </div>
-      <div class="card card-pad">
-        <form id="addGeneralTaskForm" class="add-form" style="padding:0; background:none; border:none;">
-          <input type="text" class="task-title" id="newGeneralTaskTitle" placeholder="Other task — e.g. Send faculty bios to contact" required>
-          <input type="date" id="newGeneralTaskDeadline" title="Deadline (optional)">
-          <button type="submit" class="btn btn-primary">Add task</button>
-          <div style="flex:1 1 100%; display:flex; align-items:center; gap:8px;">
-            <span class="muted" style="font-size:11.5px;">Owners:</span>
-            <div class="owner-picker" id="newGeneralTaskOwners"></div>
-          </div>
-        </form>
-      </div>
       <div class="filter-bar" style="margin:2px 2px 0;">
         <span class="muted" style="font-size:12px;">Filter:</span>
         <select id="filterProjectOwner"><option value="all">All people</option></select>
@@ -1234,12 +1223,6 @@
     npOwners.dataset.selected = JSON.stringify(npSelected);
     npOwners.innerHTML = ownerChipsHtml(npSelected);
     wireOwnerPickerToggle(npOwners);
-
-    var gtOwners = document.getElementById("newGeneralTaskOwners");
-    var gtSelected = gtOwners.dataset.selected ? JSON.parse(gtOwners.dataset.selected) : (state.me ? [state.me] : []);
-    gtOwners.dataset.selected = JSON.stringify(gtSelected);
-    gtOwners.innerHTML = ownerChipsHtml(gtSelected);
-    wireOwnerPickerToggle(gtOwners);
 
     var dnpOwners = document.getElementById("dashNewProjectOwners");
     var dnpSelected = dnpOwners.dataset.selected ? JSON.parse(dnpOwners.dataset.selected) : (state.me ? [state.me] : []);
@@ -2204,26 +2187,6 @@
     npOwners.dataset.selected = JSON.stringify(state.me ? [state.me] : []);
     npOwners.innerHTML = ownerChipsHtml(state.me ? [state.me] : []);
     wireOwnerPickerToggle(npOwners);
-  });
-
-  document.getElementById("addGeneralTaskForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    var titleEl = document.getElementById("newGeneralTaskTitle");
-    var title = titleEl.value.trim();
-    if(!title) return;
-    var gtOwners = document.getElementById("newGeneralTaskOwners");
-    var owners = gtOwners.dataset.selected ? JSON.parse(gtOwners.dataset.selected) : (state.me ? [state.me] : []);
-    addTask({
-      title: title,
-      project: "general",
-      owners: owners,
-      deadline: document.getElementById("newGeneralTaskDeadline").value || ""
-    });
-    e.target.reset();
-    gtOwners.dataset.selected = JSON.stringify(state.me ? [state.me] : []);
-    gtOwners.innerHTML = ownerChipsHtml(state.me ? [state.me] : []);
-    wireOwnerPickerToggle(gtOwners);
-    titleEl.focus();
   });
 
   document.getElementById("filterProjectOwner").addEventListener("change", function(){ state.filters.projectOwner = this.value; renderProjects(); });
