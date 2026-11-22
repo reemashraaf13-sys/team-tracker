@@ -1417,11 +1417,18 @@
   /* Finished "Other Tasks" (not tied to any proposal) land here instead of
      staying in the main "Other Tasks" card forever. Collapsed by default so
      it stays out of the way; still fully editable in case something was
-     marked Done by mistake. */
+     marked Done by mistake. Same "only finished items are period-limited"
+     rule as proposals: a done task only shows while its deadline falls in
+     the Week/Month/Year you're viewing, so this archive doesn't grow
+     endlessly — one with no deadline on file stays visible either way. */
   function renderCompletedTasks(){
     var listEl = document.getElementById("completedTasksList");
-    var done = state.tasks.filter(function(t){ return (t.project||"general")==="general" && t.status==="Done"; })
-      .sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+    var range = state.currentRange;
+    var done = state.tasks.filter(function(t){
+      if((t.project||"general")!=="general" || t.status!=="Done") return false;
+      if(!t.deadline) return true;
+      return dateInRange(t.deadline, range);
+    }).sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
     document.getElementById("completedTasksCount").textContent = done.length ? done.length+" done" : "";
     document.getElementById("completedTasksCard").classList.toggle("open", completedTasksOpen);
 
@@ -1451,13 +1458,25 @@
 
   function renderProposalCardHtml(p){
     var isGeneral = p.id === "general";
+    var range = state.currentRange;
     var pTasks = state.tasks.filter(function(t){ return (t.project||"general")===p.id; })
       .sort(function(a,b){ var da=a.deadline||"9999", db_=b.deadline||"9999"; return da<db_?-1:(da>db_?1:0); });
     // "Other Tasks" is the one place tasks would otherwise pile up forever —
     // finished ones move to the Completed tasks archive at the bottom of the
     // page instead of staying in this card. Tasks that belong to a real
-    // proposal stay put either way, since they're part of that proposal's record.
-    if(isGeneral) pTasks = pTasks.filter(function(t){ return t.status!=="Done"; });
+    // proposal stay inline here, but a done one only shows while its
+    // deadline falls in the Week/Month/Year you're viewing (no deadline on
+    // file stays visible either way) — same period rule as everywhere else,
+    // so a proposal's task list doesn't keep accumulating finished items.
+    if(isGeneral){
+      pTasks = pTasks.filter(function(t){ return t.status!=="Done"; });
+    } else {
+      pTasks = pTasks.filter(function(t){
+        if(t.status!=="Done") return true;
+        if(!t.deadline) return true;
+        return dateInRange(t.deadline, range);
+      });
+    }
     var openCount = pTasks.filter(function(t){ return t.status!=="Done"; }).length;
 
     var head = '<div class="proposal-top">' +
@@ -1998,14 +2017,14 @@
     else if(state.rangeMode==="month") state.refDate = addMonths(state.refDate, dir);
     else state.refDate = addYears(state.refDate, dir);
     state.currentRange = computeRange(state.rangeMode, state.refDate);
-    renderRangeNav(); renderDashboard(); renderProjects();
+    renderRangeNav(); renderDashboard(); renderProjects(); renderCompletedTasks();
   }
   document.getElementById("rangePrev").addEventListener("click", function(){ shiftRange(-1); });
   document.getElementById("rangeNext").addEventListener("click", function(){ shiftRange(1); });
   document.getElementById("rangeToday").addEventListener("click", function(){
     state.refDate = new Date();
     state.currentRange = computeRange(state.rangeMode, state.refDate);
-    renderRangeNav(); renderDashboard(); renderProjects();
+    renderRangeNav(); renderDashboard(); renderProjects(); renderCompletedTasks();
   });
   document.getElementById("rangeModeToggle").addEventListener("click", function(e){
     var btn = e.target.closest("[data-mode]"); if(!btn) return;
@@ -2013,7 +2032,7 @@
     document.querySelectorAll("#rangeModeToggle .toggle-chip").forEach(function(b){ b.classList.toggle("on", b===btn); });
     state.refDate = new Date();
     state.currentRange = computeRange(state.rangeMode, state.refDate);
-    renderRangeNav(); renderDashboard(); renderProjects();
+    renderRangeNav(); renderDashboard(); renderProjects(); renderCompletedTasks();
   });
 
   document.getElementById("addProjectForm").addEventListener("submit", function(e){
