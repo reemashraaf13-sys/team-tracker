@@ -318,8 +318,24 @@
   input.pt-text-input:hover{ background:var(--surface-2); border-color:var(--border); }
   input.pt-text-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
   input.pt-text-input.pt-name-input{ font-weight:700; font-size:13px; min-width:170px; }
-  #pipelineTable{ min-width:1140px; }
-  .pipeline-table td.pt-owner .owner-picker{ gap:3px; }
+  #pipelineTable{ min-width:880px; }
+
+  /* Compact owner trigger for the Pipeline table — an overlapping avatar
+     stack that opens a small floating picker on click, instead of showing
+     every team member's chip inline (which forced the whole table to
+     scroll horizontally just to see Deadline/Submit by). */
+  .pt-owner-trigger{ display:inline-flex; align-items:center; border:none; background:transparent; cursor:pointer; padding:3px 4px; border-radius:8px; }
+  .pt-owner-trigger:hover{ background:var(--surface-2); }
+  .pt-owner-trigger .avatar-chip{
+    width:23px; height:23px; border-radius:50%; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--surface); margin-left:-7px; flex:none;
+  }
+  .pt-owner-trigger .avatar-chip:first-child{ margin-left:0; }
+  .pt-owner-empty-label{ font-size:11.5px; color:var(--text-faint); white-space:nowrap; padding:2px 2px; }
+  .owner-popover{ position:fixed; z-index:500; background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); padding:9px; width:146px; }
+  .owner-popover-label{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint); margin:0 0 7px 2px; }
+  .owner-popover-chips{ display:flex; flex-wrap:wrap; gap:5px; }
+
   .icon-btn{ border:none; background:transparent; color:var(--text-faint); cursor:pointer; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex:none; }
   .icon-btn:hover{ background:var(--red-soft); color:var(--red); }
   .empty-state{ padding:40px 20px; text-align:center; color:var(--text-faint); }
@@ -384,7 +400,7 @@
   .pipeline-table td{ padding:9px 10px; border-top:1px solid var(--border); vertical-align:middle; }
   .pipeline-table tr:first-child td{ border-top:none; }
   .pipeline-table td.pt-name{ font-weight:700; }
-  .pipeline-table td.pt-owner{ white-space:normal; min-width:178px; }
+  .pipeline-table td.pt-owner{ white-space:nowrap; }
   .pipeline-table td.pt-muted{ color:var(--text-faint); }
   .pipeline-table tr.overdue td.pt-deadline{ color:var(--red); font-weight:700; }
   .owner-name-tag{ display:inline-block; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; margin:1px 4px 1px 0; white-space:nowrap; }
@@ -725,6 +741,11 @@
       </div>
     </form>
   </div>
+</div>
+
+<div class="owner-popover" id="ownerPopover" hidden>
+  <div class="owner-popover-label">Owners</div>
+  <div class="owner-popover-chips" id="ownerPopoverChips"></div>
 </div>
 
 <!--
@@ -1256,7 +1277,11 @@
       var statusOpts = ["In Progress","On Hold","Reopened","Submitted"];
       if(p.status && statusOpts.indexOf(p.status)===-1) statusOpts = [p.status].concat(statusOpts);
       return '<tr class="'+(pOverdue?"overdue":"")+'">' +
-        '<td class="pt-owner"><div class="owner-picker" data-id="'+p.id+'" data-role="pipeline-owners">'+ownerChipsHtml(owners)+"</div></td>" +
+        '<td class="pt-owner"><button type="button" class="pt-owner-trigger" data-action="toggle-owner-popover" data-id="'+p.id+'">' +
+          (owners.length
+            ? owners.map(function(oid){ return '<span class="avatar-chip" style="background:'+memberColor(oid)+';color:'+memberTextColor(oid)+';" title="'+escapeHtml(memberName(oid))+'">'+escapeHtml(initials(memberName(oid)))+"</span>"; }).join("")
+            : '<span class="pt-owner-empty-label">+ Assign</span>') +
+        "</button></td>" +
         '<td class="pt-status">' +
           '<select class="pill-select '+pstatusClass(p.status)+'" data-id="'+p.id+'" data-field="status">' +
             statusOpts.map(function(s){ return '<option value="'+s+'" '+(s===p.status?"selected":"")+">"+s+"</option>"; }).join("") +
@@ -1793,18 +1818,61 @@
     if(btn) transitionProposalStatus(btn.dataset.id, "Submitted");
     var undoBtn = e.target.closest('[data-action="undo-reopen"]');
     if(undoBtn) undoReopenProposal(undoBtn.dataset.id);
-    var chip = e.target.closest(".mini-chip");
-    if(chip){
-      var picker = chip.closest('.owner-picker[data-role="pipeline-owners"]');
-      if(picker){
-        var pid = picker.dataset.id;
-        var p = state.projects.find(function(x){ return x.id===pid; }); if(!p) return;
-        var owners = proposalOwners(p).slice();
+    var ownerTrigger = e.target.closest('[data-action="toggle-owner-popover"]');
+    if(ownerTrigger){
+      e.stopPropagation();
+      var pid = ownerTrigger.dataset.id;
+      if(openOwnerPopoverPid===pid && !document.getElementById("ownerPopover").hidden) closeOwnerPopover();
+      else openOwnerPopover(ownerTrigger, pid);
+    }
+  });
+  /* Compact owner picker for the Pipeline table: clicking the avatar stack
+     opens a small floating popover (outside the table, position:fixed) so
+     toggling owners never widens the table or forces horizontal scrolling
+     to see Deadline/Submit by. Lives outside #pipelineTableBody on purpose,
+     so it survives that table's re-renders while it's open. */
+  var openOwnerPopoverPid = null;
+  function renderOwnerPopoverChips(pid){
+    var p = state.projects.find(function(x){ return x.id===pid; });
+    if(!p){ closeOwnerPopover(); return; }
+    var chipsEl = document.getElementById("ownerPopoverChips");
+    chipsEl.innerHTML = ownerChipsHtml(proposalOwners(p));
+    chipsEl.querySelectorAll(".mini-chip").forEach(function(chip){
+      chip.addEventListener("click", function(e){
+        e.stopPropagation();
+        var cur = state.projects.find(function(x){ return x.id===pid; }); if(!cur) return;
+        var owners = proposalOwners(cur).slice();
         var idx = owners.indexOf(chip.dataset.id);
         if(idx>-1) owners.splice(idx,1); else owners.push(chip.dataset.id);
         updateProject(pid, { owners: owners });
-      }
-    }
+        renderOwnerPopoverChips(pid);
+      });
+    });
+  }
+  function openOwnerPopover(anchorEl, pid){
+    var pop = document.getElementById("ownerPopover");
+    var rect = anchorEl.getBoundingClientRect();
+    var top = rect.bottom + 6, left = rect.left;
+    if(left + 146 > window.innerWidth - 10) left = window.innerWidth - 156;
+    if(top + 90 > window.innerHeight - 10) top = rect.top - 96;
+    pop.style.top = top + "px";
+    pop.style.left = Math.max(10, left) + "px";
+    pop.hidden = false;
+    openOwnerPopoverPid = pid;
+    renderOwnerPopoverChips(pid);
+  }
+  function closeOwnerPopover(){
+    document.getElementById("ownerPopover").hidden = true;
+    openOwnerPopoverPid = null;
+  }
+  document.addEventListener("click", function(e){
+    var pop = document.getElementById("ownerPopover");
+    if(pop.hidden) return;
+    if(e.target.closest("#ownerPopover")) return;
+    closeOwnerPopover();
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key==="Escape") closeOwnerPopover();
   });
   /* Status/deadline/submit-by/name/client/bd/language/country/owners are all
      editable straight from the Pipeline table now, so this decreases the
