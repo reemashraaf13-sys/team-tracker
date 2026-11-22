@@ -317,7 +317,16 @@
   input.pt-text-input::placeholder{ color:var(--text-faint); }
   input.pt-text-input:hover{ background:var(--surface-2); border-color:var(--border); }
   input.pt-text-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
-  input.pt-text-input.pt-name-input{ font-weight:700; font-size:13px; }
+  /* Proposal title in the Pipeline table wraps to multiple lines instead of
+     truncating — unlike the other Pipeline fields, you want to read the
+     whole title at a glance, so this one grows the row's height instead of
+     clipping with an ellipsis. */
+  .pt-name-text{
+    font-weight:700; font-size:13px; color:var(--text); outline:none; border-radius:6px; padding:3px 6px; margin:-3px -6px;
+    width:100%; min-width:0; white-space:normal; overflow-wrap:break-word; word-break:break-word;
+  }
+  .pt-name-text:hover{ background:var(--surface-2); }
+  .pt-name-text:focus{ background:var(--surface); box-shadow:var(--focus); }
 
   /* Compact owner trigger for the Pipeline table — an overlapping avatar
      stack that opens a small floating picker on click, instead of showing
@@ -1302,8 +1311,8 @@
           (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="resubmit" data-id="'+p.id+'" title="Mark resubmitted — clears it from the Pipeline">✓ resubmitted</button>' : "") +
           (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="undo-reopen" data-id="'+p.id+'" title="Undo — reopened by mistake">↺ undo</button>' : "") +
         "</td>" +
-        '<td class="pt-name"><div style="display:flex; align-items:center; gap:3px; min-width:0;">' +
-          '<input class="pt-text-input pt-name-input" data-id="'+p.id+'" data-field="name" value="'+escapeHtml(p.name)+'" title="'+escapeHtml(p.name)+'">' +
+        '<td class="pt-name"><div style="display:flex; align-items:flex-start; gap:3px; min-width:0;">' +
+          '<div class="pt-name-text" contenteditable="true" data-id="'+p.id+'" data-field="name">'+escapeHtml(p.name)+"</div>" +
           (p.reopenCount ? '<span class="muted mono reopen-marker" style="flex:none;" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "") +
         "</div></td>" +
         '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="client" value="'+escapeHtml(p.client||"")+'" placeholder="Client" title="'+escapeHtml(p.client||"")+'"></td>' +
@@ -1903,6 +1912,15 @@
     }
     var patch = {}; patch[field] = el.value;
     updateProject(pid, patch);
+  });
+  /* The wrapping proposal title is a contenteditable div, not an <input>, so
+     it never fires "change" — "focusout" is the bubbling equivalent of blur
+     and is what commits the edit here. */
+  document.getElementById("pipelineTableBody").addEventListener("focusout", function(e){
+    var el = e.target;
+    if(!el.classList || !el.classList.contains("pt-name-text")) return;
+    var pid = el.dataset.id; if(!pid) return;
+    updateProject(pid, { name: el.textContent.trim() });
   });
 
   document.getElementById("brandMark").addEventListener("click", function(){
