@@ -328,17 +328,14 @@
   .pt-name-text:hover{ background:var(--surface-2); }
   .pt-name-text:focus{ background:var(--surface); box-shadow:var(--focus); }
 
-  /* Compact owner trigger for the Pipeline table — an overlapping avatar
-     stack that opens a small floating picker on click, instead of showing
-     every team member's chip inline (which forced the whole table to
-     scroll horizontally just to see Deadline/Submit by). */
-  .pt-owner-trigger{ display:inline-flex; align-items:center; border:none; background:transparent; cursor:pointer; padding:3px 4px; border-radius:8px; }
+  /* Owner trigger for the Pipeline table — same rounded name-tag pills as
+     the Submitted Proposals table (not avatar circles), so the two tables
+     match. Clicking still opens a small floating picker to change owners,
+     instead of showing every team member's chip inline (which forced the
+     whole table to scroll horizontally just to see Deadline/Submit by). */
+  .pt-owner-trigger{ display:inline-flex; flex-wrap:wrap; align-items:center; gap:2px 4px; border:none; background:transparent; cursor:pointer; padding:3px 4px; border-radius:8px; max-width:100%; text-align:left; }
   .pt-owner-trigger:hover{ background:var(--surface-2); }
-  .pt-owner-trigger .avatar-chip{
-    width:23px; height:23px; border-radius:50%; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
-    border:2px solid var(--surface); margin-left:-7px; flex:none;
-  }
-  .pt-owner-trigger .avatar-chip:first-child{ margin-left:0; }
+  .pt-owner-trigger .owner-name-tag{ margin:0; }
   .pt-owner-empty-label{ font-size:11.5px; color:var(--text-faint); white-space:nowrap; padding:2px 2px; }
   .owner-popover{ position:fixed; z-index:500; background:var(--surface); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow); padding:9px; width:146px; }
   .owner-popover-label{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint); margin:0 0 7px 2px; }
@@ -394,8 +391,15 @@
   .notes-empty{ padding:2px 20px 20px; font-size:12px; color:var(--text-faint); }
   .proposal-owners-row{ display:flex; align-items:center; gap:8px; }
   .proposal-tasks{ background:var(--surface-2); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
-  .proposal-task-row{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:var(--surface); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
+  .proposal-task-row{ display:flex; align-items:center; gap:6px 10px; padding:5px 8px; background:var(--surface); border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; }
   .proposal-task-row .task-title-text{ flex:1 1 160px; min-width:0; }
+  /* Everything after the title gets a fixed, content-sized slot instead of
+     stretching to fill the row (the deadline input in particular defaults to
+     width:100%, which used to force every field onto its own line and made
+     each task row much taller than it needed to be). */
+  .proposal-task-row .pt-owner-trigger{ flex:none; }
+  .proposal-task-row input.deadline-input{ flex:none; width:98px; }
+  .proposal-task-row select.pill-select{ flex:none; }
   .add-task-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:4px 2px; }
   .add-task-row input[type="text"]{ flex:1 1 200px; border:1px solid var(--border); background:var(--surface); border-radius:7px; padding:7px 9px; font-size:12.5px; }
   .add-task-row input[type="date"]{ border:1px solid var(--border); background:var(--surface); border-radius:7px; padding:6px 8px; font-size:12px; }
@@ -408,7 +412,7 @@
   .pipeline-table td{ padding:9px 8px; border-top:1px solid var(--border); vertical-align:middle; overflow:hidden; }
   .pipeline-table tr:first-child td{ border-top:none; }
   .pipeline-table td.pt-name{ font-weight:700; }
-  .pipeline-table td.pt-owner{ white-space:nowrap; }
+  .pipeline-table td.pt-owner{ white-space:normal; overflow:visible; }
   .pipeline-table td.pt-muted{ color:var(--text-faint); }
   .pipeline-table tr.overdue td.pt-deadline{ color:var(--red); font-weight:700; }
   .owner-name-tag{ display:inline-block; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; margin:1px 4px 1px 0; white-space:nowrap; }
@@ -592,9 +596,9 @@
         <div style="padding:14px 20px 18px;">
           <table class="pipeline-table" id="pipelineTable">
             <colgroup>
-              <col style="width:9%"><col style="width:11%"><col style="width:17%">
+              <col style="width:13%"><col style="width:11%"><col style="width:15%">
               <col style="width:11%"><col style="width:9%"><col style="width:9%">
-              <col style="width:9%"><col style="width:12.5%"><col style="width:12.5%">
+              <col style="width:9%"><col style="width:11.5%"><col style="width:11.5%">
             </colgroup>
             <thead>
               <tr><th>Owners</th><th class="pt-status">Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Deadline</th><th>Submit by</th></tr>
@@ -673,6 +677,9 @@
         <select id="filterProjectOwner"><option value="all">All people</option></select>
         <input type="text" id="filterProjectClient" placeholder="Client name…" style="width:140px;">
         <input type="text" id="filterProjectBd" placeholder="BD name…" style="width:140px;">
+      </div>
+      <div class="card" id="otherTasksCard">
+        <div id="otherTasksList"></div>
       </div>
       <div class="card" id="projectsListCard">
         <div id="projectsList"></div>
@@ -855,6 +862,15 @@
     if(!ids || !ids.length) return '<span class="muted" style="font-size:11px;">Unassigned</span>';
     return ids.map(function(id){
       return '<span class="owner-name-tag" style="background:'+memberColor(id)+'; color:'+memberTextColor(id)+';">'+escapeHtml(memberName(id))+"</span>";
+    }).join("");
+  }
+  // Shared with the compact owner-popover trigger button (Pipeline table rows,
+  // task rows, the add-task row) — same name-tag pills as ownerNameTagsHtml,
+  // or a "+ Assign" label when nobody's on it yet.
+  function ownerTriggerInnerHtml(ids){
+    if(!ids || !ids.length) return '<span class="pt-owner-empty-label">+ Assign</span>';
+    return ids.map(function(id){
+      return '<span class="owner-name-tag" style="background:'+memberColor(id)+';color:'+memberTextColor(id)+';">'+escapeHtml(memberName(id))+"</span>";
     }).join("");
   }
   function initials(name){
@@ -1299,10 +1315,8 @@
       var statusOpts = ["In Progress","On Hold","Reopened","Submitted"];
       if(p.status && statusOpts.indexOf(p.status)===-1) statusOpts = [p.status].concat(statusOpts);
       return '<tr class="'+(pOverdue?"overdue":"")+'">' +
-        '<td class="pt-owner"><button type="button" class="pt-owner-trigger" data-action="toggle-owner-popover" data-id="'+p.id+'">' +
-          (owners.length
-            ? owners.map(function(oid){ return '<span class="avatar-chip" style="background:'+memberColor(oid)+';color:'+memberTextColor(oid)+';" title="'+escapeHtml(memberName(oid))+'">'+escapeHtml(initials(memberName(oid)))+"</span>"; }).join("")
-            : '<span class="pt-owner-empty-label">+ Assign</span>') +
+        '<td class="pt-owner"><button type="button" class="pt-owner-trigger" data-action="toggle-owner-popover" data-kind="project" data-id="'+p.id+'">' +
+          ownerTriggerInnerHtml(owners) +
         "</button></td>" +
         '<td class="pt-status">' +
           '<select class="pill-select '+pstatusClass(p.status)+'" data-id="'+p.id+'" data-field="status">' +
@@ -1411,6 +1425,7 @@
   /* ---------------- proposals (merged with tasks) ---------------- */
   function renderProjects(){
     var listEl = document.getElementById("projectsList");
+    var otherEl = document.getElementById("otherTasksList");
     document.getElementById("projectsEmpty").hidden = state.projects.length>0;
 
     var range = state.currentRange;
@@ -1451,11 +1466,23 @@
       real = real.filter(function(p){ return (p.bd||"").toLowerCase().indexOf(bdQuery)>-1; });
       showGeneral = false;
     }
-    var ordered = showGeneral ? [GENERAL_PROJECT].concat(real) : real;
+    // "Other Tasks" lives in its own card, separate from the real proposals
+    // below it — same divide the two used to have, instead of being just
+    // another row in the same list.
+    document.getElementById("otherTasksCard").hidden = !showGeneral;
+    if(showGeneral){
+      var otherFocusState = captureEditFocus(otherEl);
+      otherEl.innerHTML = renderProposalCardHtml(GENERAL_PROJECT);
+      var otherCard = otherEl.querySelector(".proposal-card");
+      if(otherCard) wireProposalCard(otherCard);
+      restoreEditFocus(otherEl, otherFocusState);
+    } else {
+      otherEl.innerHTML = "";
+    }
 
     var focusState = captureEditFocus(listEl);
-    listEl.innerHTML = ordered.length ? ordered.map(function(p){ return renderProposalCardHtml(p); }).join("")
-      : '<div class="empty-state"><strong>No matches</strong>Nobody with that filter has a proposal or task right now.</div>';
+    listEl.innerHTML = real.length ? real.map(function(p){ return renderProposalCardHtml(p); }).join("")
+      : '<div class="empty-state"><strong>No matches</strong>No proposals match this filter right now.</div>';
     listEl.querySelectorAll(".proposal-card").forEach(function(card){ wireProposalCard(card); });
     restoreEditFocus(listEl, focusState);
   }
@@ -1494,7 +1521,7 @@
     var extraStyle = (overdue ? "box-shadow:inset 3px 0 0 var(--red);" : "") + (t.status==="Done" ? "opacity:.6;" : "");
     return '<div class="proposal-task-row" data-id="'+t.id+'" style="'+extraStyle+'">' +
       '<div class="task-title-text" contenteditable="true" data-field="title">'+escapeHtml(t.title)+"</div>" +
-      '<div class="owner-picker" data-role="task-owners">'+ownerChipsHtml(taskOwners(t))+"</div>" +
+      '<button type="button" class="pt-owner-trigger" data-action="toggle-owner-popover" data-kind="task" data-id="'+t.id+'">'+ownerTriggerInnerHtml(taskOwners(t))+"</button>" +
       '<input type="date" class="deadline-input" data-field="deadline" value="'+(t.deadline||"")+'">' +
       '<select class="pill-select '+statusClass(t.status)+'" data-field="status">' +
         ["Not Started","In Progress","Blocked","Done"].map(function(s){ return '<option value="'+s+'" '+(s===t.status?"selected":"")+">"+s+"</option>"; }).join("") +
@@ -1546,9 +1573,7 @@
       (isGeneral ? "" : '<button class="icon-btn" data-action="delete-project" title="Delete proposal"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>') +
     "</div>";
 
-    var meta = isGeneral ? (
-      '<p class="muted" style="margin:0; font-size:12px;">A place for to-dos that aren\'t tied to a specific proposal — internal admin, one-off tasks, etc.</p>'
-    ) : (
+    var meta = isGeneral ? "" : (
       '<div class="proposal-meta-grid">' +
         '<input data-field="client" placeholder="Client *" value="'+escapeHtml(p.client||"")+'">' +
         '<input data-field="bd" placeholder="BD" value="'+escapeHtml(p.bd||"")+'">' +
@@ -1573,7 +1598,7 @@
 
     var addTaskRow = '<div class="add-task-row" data-pid="'+p.id+'">' +
         '<input type="text" placeholder="Add a task…" data-role="new-task-title">' +
-        '<div class="owner-picker" data-role="new-task-owners">'+ownerChipsHtml(pendingNewTaskOwners[p.id] || (state.me?[state.me]:[]))+"</div>" +
+        '<button type="button" class="pt-owner-trigger" data-action="toggle-owner-popover" data-kind="pending" data-id="'+p.id+'">'+ownerTriggerInnerHtml(pendingNewTaskOwners[p.id] || (state.me?[state.me]:[]))+"</button>" +
         '<input type="date" data-role="new-task-deadline">' +
         '<button type="button" class="btn" data-role="add-task-btn">Add</button>' +
       "</div>";
@@ -1640,28 +1665,12 @@
           updateTask(tid, patch);
         });
       });
-      var ownerPicker = row.querySelector('.owner-picker[data-role="task-owners"]');
-      if(ownerPicker){
-        ownerPicker.querySelectorAll(".mini-chip").forEach(function(chip){
-          chip.addEventListener("click", function(){
-            var t = state.tasks.find(function(x){ return x.id===tid; }); if(!t) return;
-            var owners = taskOwners(t).slice();
-            var idx = owners.indexOf(chip.dataset.id);
-            if(idx>-1) owners.splice(idx,1); else owners.push(chip.dataset.id);
-            updateTask(tid, { owners: owners });
-          });
-        });
-      }
       var delTaskBtn = row.querySelector('[data-action="delete-task"]');
       if(delTaskBtn) delTaskBtn.addEventListener("click", function(){ deleteTask(tid); });
     });
 
     var addRow = card.querySelector(".add-task-row");
     if(addRow){
-      var ownerPickerNew = addRow.querySelector('.owner-picker[data-role="new-task-owners"]');
-      ownerPickerNew.dataset.selected = JSON.stringify(pendingNewTaskOwners[pid] || (state.me?[state.me]:[]));
-      wireOwnerPickerToggle(ownerPickerNew, function(sel){ pendingNewTaskOwners[pid] = sel; });
-
       var titleInput = addRow.querySelector('[data-role="new-task-title"]');
       var deadlineInput = addRow.querySelector('[data-role="new-task-deadline"]');
       var addBtn = addRow.querySelector('[data-role="add-task-btn"]');
@@ -1840,38 +1849,71 @@
     if(btn) transitionProposalStatus(btn.dataset.id, "Submitted");
     var undoBtn = e.target.closest('[data-action="undo-reopen"]');
     if(undoBtn) undoReopenProposal(undoBtn.dataset.id);
-    var ownerTrigger = e.target.closest('[data-action="toggle-owner-popover"]');
-    if(ownerTrigger){
-      e.stopPropagation();
-      var pid = ownerTrigger.dataset.id;
-      if(openOwnerPopoverPid===pid && !document.getElementById("ownerPopover").hidden) closeOwnerPopover();
-      else openOwnerPopover(ownerTrigger, pid);
-    }
   });
-  /* Compact owner picker for the Pipeline table: clicking the avatar stack
-     opens a small floating popover (outside the table, position:fixed) so
-     toggling owners never widens the table or forces horizontal scrolling
-     to see Deadline/Submit by. Lives outside #pipelineTableBody on purpose,
-     so it survives that table's re-renders while it's open. */
+  /* Delegated at the document level (not per-container) because owner
+     triggers show up in several independently-rendered places — the
+     Pipeline table, task rows inside proposal cards, and the pending
+     add-task row — and re-renders of any of them shouldn't require
+     re-wiring this listener. */
+  document.addEventListener("click", function(e){
+    var ownerTrigger = e.target.closest('[data-action="toggle-owner-popover"]');
+    if(!ownerTrigger) return;
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    var pid = ownerTrigger.dataset.id, kind = ownerTrigger.dataset.kind || "project";
+    if(openOwnerPopoverPid===pid && openOwnerPopoverKind===kind && !document.getElementById("ownerPopover").hidden) closeOwnerPopover();
+    else openOwnerPopover(ownerTrigger, kind, pid);
+  });
+  /* Compact owner picker shared by the Pipeline table, task rows, and the
+     add-task row: clicking the name-tag pills opens a small floating
+     popover (outside any table/card, position:fixed) so toggling owners
+     never widens a row or forces horizontal scrolling. Lives outside
+     #pipelineTableBody/.proposal-card on purpose, so it survives those
+     containers' re-renders while it's open. "kind" picks where the owner
+     list lives: a real proposal, an actual task, or a not-yet-created task
+     still being drafted in an add-task row (kept in pendingNewTaskOwners
+     until the row is submitted). */
   var openOwnerPopoverPid = null;
-  function renderOwnerPopoverChips(pid){
-    var p = state.projects.find(function(x){ return x.id===pid; });
-    if(!p){ closeOwnerPopover(); return; }
+  var openOwnerPopoverKind = null;
+  function getOwnerEntity(kind, id){
+    if(kind==="task") return state.tasks.find(function(x){ return x.id===id; });
+    if(kind==="pending") return { id:id, owners: pendingNewTaskOwners[id] || (state.me?[state.me]:[]) };
+    return state.projects.find(function(x){ return x.id===id; });
+  }
+  function getOwnerEntityOwners(kind, entity){
+    if(kind==="task") return taskOwners(entity);
+    if(kind==="pending") return entity.owners;
+    return proposalOwners(entity);
+  }
+  function updateOwnerEntity(kind, id, owners){
+    if(kind==="task"){ updateTask(id, { owners: owners }); return; }
+    if(kind==="pending"){
+      pendingNewTaskOwners[id] = owners;
+      document.querySelectorAll('[data-action="toggle-owner-popover"][data-kind="pending"][data-id="'+cssEsc(id)+'"]').forEach(function(btn){
+        btn.innerHTML = ownerTriggerInnerHtml(owners);
+      });
+      return;
+    }
+    updateProject(id, { owners: owners });
+  }
+  function renderOwnerPopoverChips(kind, id){
+    var entity = getOwnerEntity(kind, id);
+    if(!entity){ closeOwnerPopover(); return; }
     var chipsEl = document.getElementById("ownerPopoverChips");
-    chipsEl.innerHTML = ownerChipsHtml(proposalOwners(p));
+    chipsEl.innerHTML = ownerChipsHtml(getOwnerEntityOwners(kind, entity));
     chipsEl.querySelectorAll(".mini-chip").forEach(function(chip){
       chip.addEventListener("click", function(e){
         e.stopPropagation();
-        var cur = state.projects.find(function(x){ return x.id===pid; }); if(!cur) return;
-        var owners = proposalOwners(cur).slice();
+        var cur = getOwnerEntity(kind, id); if(!cur) return;
+        var owners = getOwnerEntityOwners(kind, cur).slice();
         var idx = owners.indexOf(chip.dataset.id);
         if(idx>-1) owners.splice(idx,1); else owners.push(chip.dataset.id);
-        updateProject(pid, { owners: owners });
-        renderOwnerPopoverChips(pid);
+        updateOwnerEntity(kind, id, owners);
+        renderOwnerPopoverChips(kind, id);
       });
     });
   }
-  function openOwnerPopover(anchorEl, pid){
+  function openOwnerPopover(anchorEl, kind, id){
     var pop = document.getElementById("ownerPopover");
     var rect = anchorEl.getBoundingClientRect();
     var top = rect.bottom + 6, left = rect.left;
@@ -1880,12 +1922,14 @@
     pop.style.top = top + "px";
     pop.style.left = Math.max(10, left) + "px";
     pop.hidden = false;
-    openOwnerPopoverPid = pid;
-    renderOwnerPopoverChips(pid);
+    openOwnerPopoverPid = id;
+    openOwnerPopoverKind = kind;
+    renderOwnerPopoverChips(kind, id);
   }
   function closeOwnerPopover(){
     document.getElementById("ownerPopover").hidden = true;
     openOwnerPopoverPid = null;
+    openOwnerPopoverKind = null;
   }
   document.addEventListener("click", function(e){
     var pop = document.getElementById("ownerPopover");
