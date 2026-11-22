@@ -311,14 +311,13 @@
 
   .task-title-text{ font-weight:600; outline:none; border-radius:5px; padding:2px 4px; margin:-2px -4px; overflow-wrap:anywhere; word-break:break-word; max-height:120px; overflow-y:auto; }
   .task-title-text:focus{ background:var(--surface-2); box-shadow:var(--focus); }
-  input.deadline-input{ border:1px solid transparent; background:transparent; color:var(--text); font-size:12.5px; border-radius:6px; padding:3px 5px; font-family:"IBM Plex Mono",monospace; }
+  input.deadline-input{ border:1px solid transparent; background:transparent; color:var(--text); font-size:12.5px; border-radius:6px; padding:3px 4px; font-family:"IBM Plex Mono",monospace; width:100%; min-width:0; box-sizing:border-box; }
   input.deadline-input:hover{ background:var(--surface-2); border-color:var(--border); }
-  input.pt-text-input{ border:1px solid transparent; background:transparent; color:var(--text); font-size:12.5px; border-radius:6px; padding:3px 6px; width:100%; min-width:92px; font-family:inherit; }
+  input.pt-text-input{ border:1px solid transparent; background:transparent; color:var(--text); font-size:12.5px; border-radius:6px; padding:3px 6px; width:100%; min-width:0; box-sizing:border-box; font-family:inherit; overflow:hidden; text-overflow:ellipsis; }
   input.pt-text-input::placeholder{ color:var(--text-faint); }
   input.pt-text-input:hover{ background:var(--surface-2); border-color:var(--border); }
   input.pt-text-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
-  input.pt-text-input.pt-name-input{ font-weight:700; font-size:13px; min-width:170px; }
-  #pipelineTable{ min-width:880px; }
+  input.pt-text-input.pt-name-input{ font-weight:700; font-size:13px; }
 
   /* Compact owner trigger for the Pipeline table — an overlapping avatar
      stack that opens a small floating picker on click, instead of showing
@@ -396,8 +395,8 @@
 
   /* ---------- Proposal pipeline table (dashboard) ---------- */
   .pipeline-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:760px; }
-  .pipeline-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint); font-weight:700; padding:0 10px 8px; white-space:nowrap; }
-  .pipeline-table td{ padding:9px 10px; border-top:1px solid var(--border); vertical-align:middle; }
+  .pipeline-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-faint); font-weight:700; padding:0 8px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pipeline-table td{ padding:9px 8px; border-top:1px solid var(--border); vertical-align:middle; overflow:hidden; }
   .pipeline-table tr:first-child td{ border-top:none; }
   .pipeline-table td.pt-name{ font-weight:700; }
   .pipeline-table td.pt-owner{ white-space:nowrap; }
@@ -405,6 +404,15 @@
   .pipeline-table tr.overdue td.pt-deadline{ color:var(--red); font-weight:700; }
   .owner-name-tag{ display:inline-block; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; margin:1px 4px 1px 0; white-space:nowrap; }
   .pipeline-table th.pt-status, .pipeline-table td.pt-status{ text-align:center; }
+  /* #pipelineTable (the editable dashboard pipeline, as opposed to the
+     Submitted Proposals table which reuses .pipeline-table too) never
+     scrolls sideways: a fixed layout with percentage columns means it
+     always fits the card's width, and overflowing text quietly truncates
+     with an ellipsis (full value still shown on hover, and editable in
+     full by clicking in) instead of forcing the whole table wider. */
+  #pipelineTable{ table-layout:fixed; min-width:0; }
+  #pipelineTable .pt-status select.pill-select{ max-width:100%; }
+  #pipelineTable .pt-status .link-btn{ display:block; font-size:10px; white-space:nowrap; }
 
   /* ---------- Team snapshot (dashboard) ---------- */
   .person-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:14px 20px 20px; }
@@ -572,8 +580,13 @@
             <button type="button" class="btn btn-primary" id="openAddProjectBtn" style="padding:6px 11px; font-size:12px;">+ Add proposal</button>
           </div>
         </div>
-        <div style="overflow-x:auto; padding:14px 20px 18px;">
+        <div style="padding:14px 20px 18px;">
           <table class="pipeline-table" id="pipelineTable">
+            <colgroup>
+              <col style="width:9%"><col style="width:11%"><col style="width:17%">
+              <col style="width:11%"><col style="width:9%"><col style="width:9%">
+              <col style="width:9%"><col style="width:12.5%"><col style="width:12.5%">
+            </colgroup>
             <thead>
               <tr><th>Owners</th><th class="pt-status">Status</th><th>Proposal</th><th>Client</th><th>BD</th><th>Language</th><th>Country</th><th>Deadline</th><th>Submit by</th></tr>
             </thead>
@@ -1289,18 +1302,18 @@
           (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="resubmit" data-id="'+p.id+'" title="Mark resubmitted — clears it from the Pipeline">✓ resubmitted</button>' : "") +
           (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="undo-reopen" data-id="'+p.id+'" title="Undo — reopened by mistake">↺ undo</button>' : "") +
         "</td>" +
-        '<td class="pt-name">' +
-          '<input class="pt-text-input pt-name-input" data-id="'+p.id+'" data-field="name" value="'+escapeHtml(p.name)+'">' +
-          (p.reopenCount ? ' <span class="muted mono reopen-marker" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "") +
-        "</td>" +
-        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="client" value="'+escapeHtml(p.client||"")+'" placeholder="Client"></td>' +
-        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="bd" value="'+escapeHtml(p.bd||"")+'" placeholder="BD"></td>' +
-        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="language" value="'+escapeHtml(p.language||"")+'" placeholder="Language"></td>' +
-        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="country" value="'+escapeHtml(p.country||"")+'" placeholder="Country"></td>' +
-        '<td class="pt-deadline">'+
+        '<td class="pt-name"><div style="display:flex; align-items:center; gap:3px; min-width:0;">' +
+          '<input class="pt-text-input pt-name-input" data-id="'+p.id+'" data-field="name" value="'+escapeHtml(p.name)+'" title="'+escapeHtml(p.name)+'">' +
+          (p.reopenCount ? '<span class="muted mono reopen-marker" style="flex:none;" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "") +
+        "</div></td>" +
+        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="client" value="'+escapeHtml(p.client||"")+'" placeholder="Client" title="'+escapeHtml(p.client||"")+'"></td>' +
+        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="bd" value="'+escapeHtml(p.bd||"")+'" placeholder="BD" title="'+escapeHtml(p.bd||"")+'"></td>' +
+        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="language" value="'+escapeHtml(p.language||"")+'" placeholder="Language" title="'+escapeHtml(p.language||"")+'"></td>' +
+        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="country" value="'+escapeHtml(p.country||"")+'" placeholder="Country" title="'+escapeHtml(p.country||"")+'"></td>' +
+        '<td class="pt-deadline"><div style="display:flex; align-items:center; gap:3px; min-width:0;">'+
           '<input type="date" class="deadline-input" data-id="'+p.id+'" data-field="deadline" value="'+(p.deadline||"")+'"'+(pOverdue?' style="border-color:var(--red); color:var(--red);"':"")+'>'+
-          (pOverdue?' <span class="muted" style="font-size:10px; color:var(--red);">overdue</span>':"")+
-        "</td>" +
+          (pOverdue?' <span class="muted" style="font-size:9.5px; color:var(--red); flex:none;">overdue</span>':"")+
+        "</div></td>" +
         '<td><input type="date" class="deadline-input" data-id="'+p.id+'" data-field="submitBy" value="'+(p.submitBy||"")+'"></td>' +
       "</tr>";
     }).join("") : '<tr><td colspan="9" style="text-align:center; padding:22px; color:var(--text-faint); border-top:none;">No active proposals yet — add one from the Proposals tab.</td></tr>';
