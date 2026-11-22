@@ -209,7 +209,21 @@
   .card-head h2{ font-size:14.5px; font-weight:700; }
   .card-head .muted{ color:var(--text-muted); font-size:12px; }
 
-  .tiles{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+  /* Completed tasks: collapsed by default, so it should read as a quiet,
+     low-weight disclosure row rather than a heavy empty-looking card —
+     only the expanded state picks up the full card treatment. */
+  .completed-tasks-card{ background:transparent; border:1px solid transparent; box-shadow:none; transition:background .15s ease, border-color .15s ease; }
+  .completed-tasks-card.open{ background:var(--surface); border-color:var(--border); box-shadow:var(--shadow); }
+  .completed-tasks-toggle{ display:flex; align-items:center; gap:8px; padding:11px 16px; border-radius:12px; cursor:pointer; user-select:none; }
+  .completed-tasks-card:not(.open) .completed-tasks-toggle:hover{ background:var(--surface-2); }
+  .completed-tasks-card.open .completed-tasks-toggle{ padding:16px 20px 2px; }
+  .completed-tasks-toggle h2{ font-size:13px; font-weight:600; color:var(--text-muted); flex:1; }
+  .completed-tasks-card.open .completed-tasks-toggle h2{ font-size:14.5px; font-weight:700; color:var(--text); }
+  .completed-tasks-toggle .chevron-icon{ color:var(--text-faint); flex:none; transition:transform .15s ease; }
+  .completed-tasks-card.open .chevron-icon{ transform:rotate(90deg); }
+  .completed-tasks-toggle .count-badge{ background:var(--surface-3); color:var(--text-faint); font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; flex:none; }
+
+  .tiles{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
   .tile{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); }
   .tile-label{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-faint); }
   .tile-value{ font-family:"Libre Franklin",sans-serif; font-size:30px; font-weight:800; margin-top:6px; }
@@ -299,6 +313,13 @@
   .task-title-text:focus{ background:var(--surface-2); box-shadow:var(--focus); }
   input.deadline-input{ border:1px solid transparent; background:transparent; color:var(--text); font-size:12.5px; border-radius:6px; padding:3px 5px; font-family:"IBM Plex Mono",monospace; }
   input.deadline-input:hover{ background:var(--surface-2); border-color:var(--border); }
+  input.pt-text-input{ border:1px solid transparent; background:transparent; color:var(--text); font-size:12.5px; border-radius:6px; padding:3px 6px; width:100%; min-width:92px; font-family:inherit; }
+  input.pt-text-input::placeholder{ color:var(--text-faint); }
+  input.pt-text-input:hover{ background:var(--surface-2); border-color:var(--border); }
+  input.pt-text-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
+  input.pt-text-input.pt-name-input{ font-weight:700; font-size:13px; min-width:170px; }
+  #pipelineTable{ min-width:1140px; }
+  .pipeline-table td.pt-owner .owner-picker{ gap:3px; }
   .icon-btn{ border:none; background:transparent; color:var(--text-faint); cursor:pointer; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex:none; }
   .icon-btn:hover{ background:var(--red-soft); color:var(--red); }
   .empty-state{ padding:40px 20px; text-align:center; color:var(--text-faint); }
@@ -313,30 +334,6 @@
   }
   .mini-chip:hover{ transform:scale(1.1); border-color:var(--border-strong); }
   .mini-chip.on{ color:#fff; border-color:transparent; }
-
-  /* ---------- Meetings ---------- */
-  .meeting-list{ display:flex; flex-direction:column; gap:12px; }
-  .meeting-card{ padding:16px 18px; }
-  .meeting-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-  .meeting-title{ font-weight:700; font-size:14.5px; outline:none; border-radius:5px; overflow-wrap:anywhere; word-break:break-word; max-height:120px; overflow-y:auto; }
-  .meeting-title:focus{ background:var(--surface-2); box-shadow:var(--focus); }
-  .meeting-meta{ display:flex; align-items:center; gap:10px; margin-top:4px; font-size:12px; color:var(--text-muted); flex-wrap:wrap; }
-  .meeting-meta .mono{ color:var(--text-faint); }
-  .attendee-dots{ display:flex; }
-  .attendee-dots .presence-dot{ width:20px; height:20px; font-size:9px; }
-  .meeting-notes-text{
-    margin-top:10px; width:100%; min-height:70px; resize:vertical; font-size:13px; color:var(--text);
-    border:1px solid var(--border); border-radius:8px; padding:8px 10px; background:var(--surface-2); font-family:inherit; line-height:1.5;
-  }
-  .meeting-notes-text:focus{ outline:none; border-color:var(--accent); box-shadow:var(--focus); background:var(--surface); }
-  .action-items{ margin-top:10px; display:flex; flex-direction:column; gap:6px; }
-  .action-item{ display:flex; align-items:center; gap:8px; font-size:12.5px; }
-  .action-item input[type="checkbox"]{ accent-color:var(--accent); width:14px; height:14px; flex:none; }
-  .action-item .ai-text{ flex:1; outline:none; overflow-wrap:anywhere; word-break:break-word; min-width:0; max-height:100px; overflow-y:auto; }
-  .action-item.done .ai-text{ text-decoration:line-through; color:var(--text-faint); }
-  .action-item .btn{ padding:3px 8px; font-size:10.5px; }
-  .add-action-item{ display:flex; gap:6px; margin-top:8px; }
-  .add-action-item input{ flex:1; border:1px solid var(--border); background:var(--surface-2); border-radius:7px; padding:6px 9px; font-size:12px; }
 
   /* ---------- Proposals (merged with tasks) ---------- */
   .proposal-card{ padding:16px 18px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:10px; }
@@ -387,7 +384,7 @@
   .pipeline-table td{ padding:9px 10px; border-top:1px solid var(--border); vertical-align:middle; }
   .pipeline-table tr:first-child td{ border-top:none; }
   .pipeline-table td.pt-name{ font-weight:700; }
-  .pipeline-table td.pt-owner{ white-space:normal; }
+  .pipeline-table td.pt-owner{ white-space:normal; min-width:178px; }
   .pipeline-table td.pt-muted{ color:var(--text-faint); }
   .pipeline-table tr.overdue td.pt-deadline{ color:var(--red); font-weight:700; }
   .owner-name-tag{ display:inline-block; font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; margin:1px 4px 1px 0; white-space:nowrap; }
@@ -498,11 +495,6 @@
         Proposals
         <span class="count" id="navCountProjects">0</span>
       </button>
-      <button class="nav-item" data-view="meetings">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-        Meetings
-        <span class="count" id="navCountMeetings">0</span>
-      </button>
       <button class="nav-item" data-view="notes">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h5"/></svg>
         Notes
@@ -553,7 +545,6 @@
         <div class="tile accent"><div class="tile-label">Proposals open</div><div class="tile-value" id="statTotal">0</div><div class="tile-sub" id="statTotalSub">&nbsp;</div></div>
         <div class="tile good"><div class="tile-label">Completed</div><div class="tile-value" id="statDone">0</div><div class="tile-sub" id="statDoneSub">&nbsp;</div></div>
         <div class="tile danger"><div class="tile-label">Overdue</div><div class="tile-value" id="statOverdue">0</div><div class="tile-sub" id="statOverdueSub">&nbsp;</div></div>
-        <div class="tile warn"><div class="tile-label">Meetings</div><div class="tile-value" id="statMeetings">0</div><div class="tile-sub" id="statMeetingsSub">&nbsp;</div></div>
         <div class="tile slate"><div class="tile-label">Tasks due</div><div class="tile-value" id="statTasksDue">0</div><div class="tile-sub" id="statTasksDueSub">&nbsp;</div></div>
       </div>
 
@@ -591,33 +582,6 @@
         <div class="card-head"><h2>Team Snapshot</h2><span class="muted" id="personSnapshotLabel"></span></div>
         <div class="person-grid" id="personGrid"></div>
       </div>
-    </section>
-
-    <!-- MEETINGS -->
-    <section class="view" id="view-meetings" hidden>
-      <div class="filter-bar">
-        <select id="filterMeetingClient"><option value="all">All clients</option></select>
-        <div class="spacer"></div>
-      </div>
-
-      <div class="card card-pad">
-        <form id="addMeetingForm" style="display:flex; flex-direction:column; gap:10px;">
-          <div class="add-form" style="padding:0; background:none; border:none;">
-            <input type="text" id="newMeetingTitle" class="task-title" placeholder="Meeting title — e.g. Weekly team sync" required>
-            <input type="text" id="newMeetingClient" list="clientSuggestions" placeholder="Client (optional) — e.g. Al Rajhi Takaful">
-            <datalist id="clientSuggestions"></datalist>
-            <input type="date" id="newMeetingDate" required>
-            <input type="time" id="newMeetingTime" value="10:00" title="Start time">
-            <input type="time" id="newMeetingEndTime" value="11:00" title="End time">
-            <button type="submit" class="btn btn-primary">Add meeting</button>
-          </div>
-          <div id="newMeetingAttendees" class="filter-bar"></div>
-          <textarea id="newMeetingNotes" class="task-notes" placeholder="Notes (optional) — paste as bullet points, one per line" style="width:100%; min-height:60px;"></textarea>
-        </form>
-      </div>
-
-      <div class="meeting-list" id="meetingsList"></div>
-      <div class="empty-state" id="meetingsEmpty" hidden><strong>No meetings yet</strong>Add your first one above.</div>
     </section>
 
     <!-- NOTES -->
@@ -669,16 +633,19 @@
       <div class="filter-bar" style="margin:2px 2px 0;">
         <span class="muted" style="font-size:12px;">Filter:</span>
         <select id="filterProjectOwner"><option value="all">All people</option></select>
+        <input type="text" id="filterProjectClient" placeholder="Client name…" style="width:140px;">
+        <input type="text" id="filterProjectBd" placeholder="BD name…" style="width:140px;">
       </div>
       <div class="card" id="projectsListCard">
         <div id="projectsList"></div>
       </div>
       <div class="empty-state" id="projectsEmpty" hidden><strong>No proposals yet</strong>Add your first one above.</div>
 
-      <div class="card" id="completedTasksCard">
-        <div class="card-head" id="completedTasksToggle" style="cursor:pointer; user-select:none;">
-          <h2><span id="completedTasksChevron">▸</span> Completed tasks</h2>
-          <span class="muted" id="completedTasksCount"></span>
+      <div class="card completed-tasks-card" id="completedTasksCard">
+        <div class="completed-tasks-toggle" id="completedTasksToggle">
+          <svg class="chevron-icon" id="completedTasksChevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 6l6 6-6 6"/></svg>
+          <h2>Completed tasks</h2>
+          <span class="count-badge" id="completedTasksCount"></span>
         </div>
         <div id="completedTasksList" hidden></div>
       </div>
@@ -830,20 +797,6 @@
     if(!d) return false;
     return d >= range.start && d <= range.end;
   }
-  function timeToMinutes(t){ if(!t) return null; var p=String(t).split(":"); if(p.length<2) return null; return (+p[0])*60+(+p[1]); }
-  function meetingDurationHours(m){
-    var s=timeToMinutes(m.time), e=timeToMinutes(m.endTime);
-    if(s==null || e==null) return 0;
-    var diff = e-s;
-    if(diff<0) diff = 0;
-    return diff/60;
-  }
-  function fmtHours(h){
-    if(!h) return "0h";
-    var rounded = Math.round(h*10)/10;
-    return rounded+"h";
-  }
-
   // Boss-specified per-person colors, matching his reference tags (Joe/light blue, Orion/light green, Amro/light purple, Reem/light pink, Omar/light brown).
   // Single source of truth for this person's color everywhere in the app — avatars, dots, chips, and the pipeline owner tags all read from here.
   var PERSON_COLORS = {
@@ -889,13 +842,12 @@
     team: null,
     projects: [],
     tasks: [],
-    meetings: [],
     notes: [],
     me: localStorage_get("cadence.me"),
     rangeMode: "week",
     refDate: new Date(),
     currentRange: null,
-    filters: { meetingWeek:"all", meetingClient:"all", projectOwner:"all" },
+    filters: { projectOwner:"all", projectClient:"", projectBd:"" },
     peers: [],
     brandLogo: ""
   };
@@ -916,12 +868,6 @@
 
   function taskOwners(t){ return t.owners || (t.owner ? [t.owner] : []); }
   function proposalOwners(p){ return p.owners || (p.owner ? [p.owner] : []); }
-  function ownerDotsHtml(ids){
-    if(!ids || !ids.length) return '<span class="muted" style="font-size:11px;">Unassigned</span>';
-    return '<div class="attendee-dots">' + ids.map(function(id){
-      return '<span class="presence-dot" style="background:'+memberColor(id)+'; color:'+memberTextColor(id)+';" title="'+escapeHtml(memberName(id))+'">'+escapeHtml(initials(memberName(id)))+"</span>";
-    }).join("") + "</div>";
-  }
 
   function isOverdue(task){
     return !!task.deadline && task.deadline < todayStr() && task.status !== "Done";
@@ -959,9 +905,6 @@
       { id: uid(), title:"Example — Send faculty bios to contact", project:"p3", owners:["amro"], status:"Not Started", deadline:isoDate(addDays(today,-1)), notes:"Overdue example, shown in red.", example:true },
       { id: uid(), title:"Example — Finalize methodology slide", project:"p2", owners:["omar"], status:"Done", deadline:isoDate(addDays(today,-3)), notes:"", example:true }
     ];
-    state.meetings = [
-      { id: uid(), title:"Example — Weekly sync", client:"", date:isoDate(today), time:"10:00", endTime:"11:00", attendees:["joe","reem","oreo","amro","omar"], notes:"- Review pipeline\n- Blockers\n- This week's deadlines", actionItems:[{text:"Confirm proposal timelines", done:false}], example:true }
-    ];
   }
 
   function ensureSeedExamples(){
@@ -983,12 +926,10 @@
       }).then(function(){
         var today = new Date();
         var tc = state.db.collection("tasks");
-        var mc = state.db.collection("meetings");
         return Promise.all([
           tc.add({ title:"Example — Review proposal deck", project:"p1", owners:["reem"], status:"In Progress", deadline:isoDate(addDays(today,2)), notes:"Sample task — edit or delete me.", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
           tc.add({ title:"Example — Send faculty bios to contact", project:"p3", owners:["amro"], status:"Not Started", deadline:isoDate(addDays(today,-1)), notes:"Overdue example, shown in red.", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
-          tc.add({ title:"Example — Finalize methodology slide", project:"p2", owners:["omar"], status:"Done", deadline:isoDate(addDays(today,-3)), notes:"", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() }),
-          mc.add({ title:"Example — Weekly sync", client:"", date:isoDate(today), time:"10:00", endTime:"11:00", attendees:["joe","reem","oreo","amro","omar"], notes:"- Review pipeline\n- Blockers\n- This week's deadlines", actionItems:[{text:"Confirm proposal timelines", done:false}], example:true, createdBy:"system", createdAt:Date.now() })
+          tc.add({ title:"Example — Finalize methodology slide", project:"p2", owners:["omar"], status:"Done", deadline:isoDate(addDays(today,-3)), notes:"", example:true, createdBy:"system", createdAt:Date.now(), updatedAt:Date.now() })
         ]);
       });
     }).catch(function(e){ console.warn("seed skipped", e); });
@@ -1023,11 +964,6 @@
       state.tasks = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
       renderAll();
     }, function(e){ console.warn("tasks error", e); showSetupBanner(); });
-
-    state.db.collection("meetings").onSnapshot(function(snap){
-      state.meetings = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
-      renderAll();
-    }, function(e){ console.warn("meetings error", e); });
 
     state.db.collection("projects").onSnapshot(function(snap){
       state.projects = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
@@ -1085,7 +1021,7 @@
 
   /* ----------------------------------------------------------------
      Focus preservation across live re-renders.
-     Every Firestore onSnapshot (tasks/meetings/projects/team) calls
+     Every Firestore onSnapshot (tasks/projects/team) calls
      renderAll(), which rebuilds these lists' innerHTML from scratch —
      including while a teammate is mid-typing in one of them. Without
      this, one person's edit (anywhere) wipes out whatever text another
@@ -1107,8 +1043,6 @@
     var addRow = el.closest(".add-task-row");
     var taskRow = el.closest(".proposal-task-row");
     var propCard = el.closest(".proposal-card");
-    var meetingCard = el.closest(".meeting-card");
-    var actionItem = el.closest(".action-item");
 
     if(addRow && el.dataset.role){
       sel = '.add-task-row[data-pid="'+cssEsc(addRow.dataset.pid)+'"] [data-role="'+el.dataset.role+'"]';
@@ -1118,12 +1052,6 @@
       sel = '.proposal-card[data-id="'+cssEsc(propCard.dataset.id)+'"] .project-name-input';
     } else if(propCard && el.dataset.field){
       sel = '.proposal-card[data-id="'+cssEsc(propCard.dataset.id)+'"] [data-field="'+el.dataset.field+'"]';
-    } else if(meetingCard && actionItem && el.dataset.action==="edit-ai"){
-      sel = '.meeting-card[data-id="'+cssEsc(meetingCard.dataset.id)+'"] .action-item[data-idx="'+actionItem.dataset.idx+'"] [data-action="edit-ai"]';
-    } else if(meetingCard && el.dataset.action==="new-ai"){
-      sel = '.meeting-card[data-id="'+cssEsc(meetingCard.dataset.id)+'"] [data-action="new-ai"]';
-    } else if(meetingCard && el.dataset.field){
-      sel = '.meeting-card[data-id="'+cssEsc(meetingCard.dataset.id)+'"] [data-field="'+el.dataset.field+'"]';
     } else if(el.dataset.id && el.dataset.field){
       sel = '[data-id="'+cssEsc(el.dataset.id)+'"][data-field="'+el.dataset.field+'"]';
     }
@@ -1162,7 +1090,6 @@
     renderNotes();
     renderProjects();
     renderCompletedTasks();
-    renderMeetings();
     renderWhoami();
     renderBrand();
   }
@@ -1186,7 +1113,6 @@
   }
 
   function renderNavCounts(){
-    document.getElementById("navCountMeetings").textContent = state.meetings.length;
     document.getElementById("navCountProjects").textContent = activeProjectsList().length;
     document.getElementById("navCountNotes").textContent = state.notes.length;
   }
@@ -1244,24 +1170,6 @@
   function renderWhoamiOwnerLists(){
     var members = teamMembers();
 
-    var att = document.getElementById("newMeetingAttendees");
-    var attSelected = att.dataset.selected ? JSON.parse(att.dataset.selected) : members.map(function(m){ return m.id; });
-    att.innerHTML = '<span class="muted" style="font-size:11.5px; align-self:center;">Attendees:</span>' + members.map(function(m){
-      var on = attSelected.indexOf(m.id)>-1;
-      return '<label class="toggle-chip attendee-chip'+(on?" on":"")+'" data-id="'+m.id+'" style="cursor:pointer;">'+escapeHtml(m.name)+"</label>";
-    }).join("");
-    att.dataset.selected = JSON.stringify(attSelected);
-    att.querySelectorAll(".attendee-chip").forEach(function(chip){
-      chip.addEventListener("click", function(){
-        chip.classList.toggle("on");
-        var sel = JSON.parse(att.dataset.selected || "[]");
-        var id = chip.dataset.id, idx = sel.indexOf(id);
-        if(chip.classList.contains("on")){ if(idx===-1) sel.push(id); }
-        else { if(idx>-1) sel.splice(idx,1); }
-        att.dataset.selected = JSON.stringify(sel);
-      });
-    });
-
     var npOwners = document.getElementById("newProjectOwners");
     var npSelected = npOwners.dataset.selected ? JSON.parse(npOwners.dataset.selected) : (state.me ? [state.me] : []);
     npOwners.dataset.selected = JSON.stringify(npSelected);
@@ -1279,10 +1187,6 @@
     dnpOwners.dataset.selected = JSON.stringify(dnpSelected);
     dnpOwners.innerHTML = ownerChipsHtml(dnpSelected);
     wireOwnerPickerToggle(dnpOwners);
-
-    var clientList = document.getElementById("clientSuggestions");
-    var clients = Array.from(new Set(state.projects.map(function(p){ return p.client; }).filter(Boolean)));
-    clientList.innerHTML = clients.map(function(c){ return '<option value="'+escapeHtml(c)+'">'; }).join("");
 
     var fpo = document.getElementById("filterProjectOwner");
     var fpoCur = fpo.value || state.filters.projectOwner;
@@ -1323,8 +1227,6 @@
     var overdueProposals = state.projects.filter(isProposalOverdue).length;
     var rangeTasks = state.tasks.filter(function(t){ return t.deadline && dateInRange(t.deadline, range); });
     var doneTasks = rangeTasks.filter(function(t){ return t.status==="Done"; });
-    var rangeMeetings = state.meetings.filter(function(m){ return dateInRange(m.date, range); });
-    var totalHours = rangeMeetings.reduce(function(sum,m){ return sum+meetingDurationHours(m); }, 0);
 
     document.getElementById("statTotal").textContent = proposalsDueRemaining.length;
     document.getElementById("statTotalSub").textContent = proposalsDueRange.length ? proposalsDueRange.length+" due "+rangeWord : "Nothing due "+rangeWord;
@@ -1332,14 +1234,12 @@
     document.getElementById("statDoneSub").textContent = submittedRange.length ? "submitted "+rangeWord : "none submitted "+rangeWord;
     document.getElementById("statOverdue").textContent = overdueProposals;
     document.getElementById("statOverdueSub").textContent = overdueProposals ? "past deadline, not submitted" : "nothing overdue";
-    document.getElementById("statMeetings").textContent = rangeMeetings.length;
-    document.getElementById("statMeetingsSub").textContent = rangeMeetings.length ? fmtHours(totalHours)+" total "+rangeWord : "none scheduled";
     document.getElementById("statTasksDue").textContent = rangeTasks.length;
     document.getElementById("statTasksDueSub").textContent = rangeTasks.length ? doneTasks.length+" done · "+(rangeTasks.length-doneTasks.length)+" remaining "+rangeWord : "No tasks due "+rangeWord;
 
     renderPipelineTable();
     renderSubmittedTable(range);
-    renderPersonSnapshot(range, rangeMeetings);
+    renderPersonSnapshot(range);
   }
 
   function renderPipelineTable(){
@@ -1356,7 +1256,7 @@
       var statusOpts = ["In Progress","On Hold","Reopened","Submitted"];
       if(p.status && statusOpts.indexOf(p.status)===-1) statusOpts = [p.status].concat(statusOpts);
       return '<tr class="'+(pOverdue?"overdue":"")+'">' +
-        '<td class="pt-owner'+(owners.length?"":" pt-muted")+'">'+ownerNameTagsHtml(owners)+"</td>" +
+        '<td class="pt-owner"><div class="owner-picker" data-id="'+p.id+'" data-role="pipeline-owners">'+ownerChipsHtml(owners)+"</div></td>" +
         '<td class="pt-status">' +
           '<select class="pill-select '+pstatusClass(p.status)+'" data-id="'+p.id+'" data-field="status">' +
             statusOpts.map(function(s){ return '<option value="'+s+'" '+(s===p.status?"selected":"")+">"+s+"</option>"; }).join("") +
@@ -1364,11 +1264,14 @@
           (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="resubmit" data-id="'+p.id+'" title="Mark resubmitted — clears it from the Pipeline">✓ resubmitted</button>' : "") +
           (p.status==="Reopened" ? ' <button type="button" class="link-btn" data-action="undo-reopen" data-id="'+p.id+'" title="Undo — reopened by mistake">↺ undo</button>' : "") +
         "</td>" +
-        '<td class="pt-name">'+escapeHtml(p.name)+(p.reopenCount ? ' <span class="muted mono reopen-marker" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "")+"</td>" +
-        '<td'+(p.client?"":' class="pt-muted"')+'>'+escapeHtml(p.client||"—")+"</td>" +
-        '<td'+(p.bd?"":' class="pt-muted"')+'>'+escapeHtml(p.bd||"—")+"</td>" +
-        '<td'+(p.language?"":' class="pt-muted"')+'>'+escapeHtml(p.language||"—")+"</td>" +
-        '<td'+(p.country?"":' class="pt-muted"')+'>'+escapeHtml(p.country||"—")+"</td>" +
+        '<td class="pt-name">' +
+          '<input class="pt-text-input pt-name-input" data-id="'+p.id+'" data-field="name" value="'+escapeHtml(p.name)+'">' +
+          (p.reopenCount ? ' <span class="muted mono reopen-marker" title="Reopened '+p.reopenCount+' time'+(p.reopenCount===1?"":"s")+' since it was first submitted">↺'+p.reopenCount+"</span>" : "") +
+        "</td>" +
+        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="client" value="'+escapeHtml(p.client||"")+'" placeholder="Client"></td>' +
+        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="bd" value="'+escapeHtml(p.bd||"")+'" placeholder="BD"></td>' +
+        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="language" value="'+escapeHtml(p.language||"")+'" placeholder="Language"></td>' +
+        '<td><input class="pt-text-input" data-id="'+p.id+'" data-field="country" value="'+escapeHtml(p.country||"")+'" placeholder="Country"></td>' +
         '<td class="pt-deadline">'+
           '<input type="date" class="deadline-input" data-id="'+p.id+'" data-field="deadline" value="'+(p.deadline||"")+'"'+(pOverdue?' style="border-color:var(--red); color:var(--red);"':"")+'>'+
           (pOverdue?' <span class="muted" style="font-size:10px; color:var(--red);">overdue</span>':"")+
@@ -1396,7 +1299,7 @@
     }).join("") : '<tr><td colspan="5" style="text-align:center; padding:22px; color:var(--text-faint); border-top:none;">No proposals submitted in this period yet.</td></tr>';
   }
 
-  function renderPersonSnapshot(range, rangeMeetings){
+  function renderPersonSnapshot(range){
     document.getElementById("personSnapshotLabel").textContent = state.currentRange.label;
     var grid = document.getElementById("personGrid");
     grid.innerHTML = teamMembers().map(function(m, idx){
@@ -1410,10 +1313,6 @@
         .sort(function(a,b){ var da=a.deadline||"", db_=b.deadline||""; return da<db_?1:-1; });
       var myProposalsDone = state.projects.filter(function(p){ return p.status==="Submitted" && proposalOwners(p).indexOf(m.id)>-1 && p.submitBy && dateInRange(p.submitBy, range); })
         .sort(function(a,b){ var da=a.submitBy||"", db_=b.submitBy||""; return da<db_?1:-1; });
-
-      var theirMeetings = rangeMeetings.filter(function(mt){ return (mt.attendees||[]).indexOf(m.id)>-1; })
-        .sort(function(a,b){ return (a.date+a.time) < (b.date+b.time) ? -1 : 1; });
-      var hours = theirMeetings.reduce(function(sum,mt){ return sum+meetingDurationHours(mt); },0);
 
       var proposalRows = myProposals.map(function(p){
         return '<div class="person-row'+(isProposalOverdue(p)?" overdue":"")+'">' +
@@ -1445,15 +1344,6 @@
 
       var hasWork = myProposals.length || myTasksOpen.length || myTasksDone.length || myProposalsDone.length;
 
-      var meetingRows = theirMeetings.map(function(mt){
-        var dur = meetingDurationHours(mt);
-        return '<div class="person-row">' +
-          '<span class="mono" style="font-size:10px; color:var(--text-faint); flex:none;">'+mt.date.slice(5)+"</span>" +
-          '<span class="person-row-title">'+escapeHtml(mt.title)+"</span>" +
-          (dur ? '<span class="mono" style="font-size:10px; color:var(--text-faint); flex:none;">'+fmtHours(dur)+"</span>" : "") +
-        "</div>";
-      }).join("");
-
       return '<div class="person-card'+(isWide?" wide":"")+'">' +
         '<div class="person-card-head">' +
           '<span class="team-avatar" style="width:30px;height:30px;font-size:12px;border-radius:9px;background:'+memberColor(m.id)+';color:'+memberTextColor(m.id)+';">'+escapeHtml(initials(m.name))+"</span>" +
@@ -1466,14 +1356,7 @@
               (hasWork ? proposalRows + taskRows + doneProposalRows + doneTaskRows : '<div class="person-empty">Nothing open right now</div>') +
             "</div>" +
           "</div>" +
-          '<div class="person-section">' +
-            '<div class="person-section-label">Meetings · '+state.currentRange.label+"</div>" +
-            '<div class="person-scroll">' +
-              (theirMeetings.length ? meetingRows : '<div class="person-empty">No meetings this range</div>') +
-            "</div>" +
-          "</div>" +
         "</div>" +
-        '<div class="person-foot">'+theirMeetings.length+" meeting"+(theirMeetings.length===1?"":"s")+" · "+fmtHours(hours)+" total</div>" +
       "</div>";
     }).join("");
   }
@@ -1507,6 +1390,20 @@
       });
       showGeneral = state.tasks.some(function(t){ return (t.project||"general")==="general" && taskOwners(t).indexOf(filterId)>-1; });
     }
+    // Client/BD filters are plain substring text matches, combined with the
+    // owner filter and each other using AND logic. "Other Tasks" has neither
+    // a client nor a BD, so it never matches either of these and drops out
+    // of the list the moment either filter is in use.
+    var clientQuery = (state.filters.projectClient || "").trim().toLowerCase();
+    var bdQuery = (state.filters.projectBd || "").trim().toLowerCase();
+    if(clientQuery){
+      real = real.filter(function(p){ return (p.client||"").toLowerCase().indexOf(clientQuery)>-1; });
+      showGeneral = false;
+    }
+    if(bdQuery){
+      real = real.filter(function(p){ return (p.bd||"").toLowerCase().indexOf(bdQuery)>-1; });
+      showGeneral = false;
+    }
     var ordered = showGeneral ? [GENERAL_PROJECT].concat(real) : real;
 
     var focusState = captureEditFocus(listEl);
@@ -1526,7 +1423,7 @@
     var done = state.tasks.filter(function(t){ return (t.project||"general")==="general" && t.status==="Done"; })
       .sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
     document.getElementById("completedTasksCount").textContent = done.length ? done.length+" done" : "";
-    document.getElementById("completedTasksChevron").textContent = completedTasksOpen ? "▾" : "▸";
+    document.getElementById("completedTasksCard").classList.toggle("open", completedTasksOpen);
 
     var focusState = captureEditFocus(listEl);
     listEl.innerHTML = done.length
@@ -1820,164 +1717,6 @@
     else { state.notes = state.notes.filter(function(n){ return n.id!==id; }); renderAll(); }
   }
 
-  /* ---------------- meetings ---------------- */
-  function meetingClientLabel(m){
-    if(m.client) return m.client;
-    if(m.project && m.project!=="general"){
-      var p = projectById(m.project);
-      if(p) return p.client || p.name;
-    }
-    return "";
-  }
-  function meetingNotes(m){ return (m.notes!=null) ? m.notes : (m.agenda||""); }
-
-  function renderMeetings(){
-    var clientOptions = Array.from(new Set(state.meetings.map(meetingClientLabel).filter(Boolean))).sort();
-    var csel = document.getElementById("filterMeetingClient");
-    var ccur = csel.value;
-    csel.innerHTML = '<option value="all">All clients</option>' + clientOptions.map(function(c){ return '<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+"</option>"; }).join("");
-    if(clientOptions.indexOf(ccur)>-1) csel.value = ccur;
-
-    var range = state.currentRange;
-    var rows = state.meetings.filter(function(m){
-      if(!dateInRange(m.date, range)) return false;
-      if(state.filters.meetingClient!=="all" && meetingClientLabel(m)!==state.filters.meetingClient) return false;
-      return true;
-    }).sort(function(a,b){
-      if(a.date !== b.date) return a.date < b.date ? -1 : 1;
-      var ta = timeToMinutes(a.time), tb = timeToMinutes(b.time);
-      if(ta===null && tb===null) return 0;
-      if(ta===null) return 1;
-      if(tb===null) return -1;
-      return ta - tb;
-    });
-
-    var list = document.getElementById("meetingsList");
-    var emptyEl = document.getElementById("meetingsEmpty");
-    emptyEl.hidden = rows.length>0;
-    if(!rows.length){
-      emptyEl.innerHTML = state.meetings.length
-        ? "<strong>No meetings in this range</strong>Try a different Week/Month/Year above, or add one."
-        : "<strong>No meetings yet</strong>Add your first one above.";
-    }
-    var focusState = captureEditFocus(list);
-    list.innerHTML = rows.map(function(m){
-      var attendeeDots = (m.attendees||[]).map(function(id){
-        return '<span class="presence-dot" style="background:'+memberColor(id)+'; color:'+memberTextColor(id)+';" title="'+escapeHtml(memberName(id))+'">'+escapeHtml(initials(memberName(id)))+"</span>";
-      }).join("");
-      var actionItems = (m.actionItems||[]).map(function(ai, idx){
-        return '<div class="action-item '+(ai.done?"done":"")+'" data-idx="'+idx+'">' +
-          '<input type="checkbox" data-action="toggle-ai" '+(ai.done?"checked":"")+'>' +
-          '<span class="ai-text" contenteditable="true" data-action="edit-ai">'+escapeHtml(ai.text)+"</span>" +
-          (ai.taskId ? '<span class="pill status-inprogress">Task added</span>' : '<button type="button" class="btn btn-ghost" data-action="ai-to-task">→ Task</button>') +
-        "</div>";
-      }).join("");
-      var client = meetingClientLabel(m);
-      var dur = meetingDurationHours(m);
-      return '<div class="card meeting-card" data-id="'+m.id+'">' +
-        '<div class="meeting-head">' +
-          '<div>' +
-            '<div class="meeting-title" contenteditable="true" data-field="title">'+escapeHtml(m.title)+"</div>" +
-            '<div class="meeting-meta">' +
-              '<input type="date" class="deadline-input" data-field="date" value="'+(m.date||"")+'">' +
-              '<input type="time" class="deadline-input" data-field="time" value="'+(m.time||"")+'">' +
-              '<span class="muted" style="font-size:11px;">–</span>' +
-              '<input type="time" class="deadline-input" data-field="endTime" value="'+(m.endTime||"")+'">' +
-              (dur ? '<span class="mono" style="font-size:11px; color:var(--text-faint);">('+fmtHours(dur)+")</span>" : "") +
-              (client ? '<span class="project-tag">'+escapeHtml(client)+"</span>" : "") + (m.example ? '<span class="pill example">Example</span>' : "") +
-            "</div>" +
-          "</div>" +
-          '<div style="display:flex; align-items:center; gap:8px;">' +
-            '<div class="attendee-dots">'+attendeeDots+"</div>" +
-            '<button class="icon-btn" data-action="delete-meeting" title="Delete meeting"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>' +
-          "</div>" +
-        "</div>" +
-        '<textarea class="meeting-notes-text" data-field="notes" placeholder="Notes…">'+escapeHtml(meetingNotes(m))+"</textarea>" +
-        '<div class="action-items">'+actionItems+"</div>" +
-        '<div class="add-action-item"><input type="text" placeholder="Add an action item…" data-action="new-ai"><button type="button" class="btn" data-action="add-ai">Add</button></div>' +
-      "</div>";
-    }).join("");
-
-    list.querySelectorAll(".meeting-card").forEach(function(card){
-      var id = card.dataset.id;
-      card.querySelectorAll("[data-field]").forEach(function(el){
-        var evt = (el.tagName==="INPUT") ? "change" : "blur";
-        el.addEventListener(evt, function(){
-          var val = (el.tagName==="TEXTAREA" || el.tagName==="INPUT") ? el.value : el.textContent.trim();
-          var patch = {}; patch[el.dataset.field] = val;
-          updateMeeting(id, patch);
-        });
-      });
-      card.querySelector('[data-action="delete-meeting"]').addEventListener("click", function(){ deleteMeeting(id); });
-      card.querySelectorAll('[data-action="toggle-ai"]').forEach(function(cb){
-        cb.addEventListener("change", function(){
-          var idx = +cb.closest(".action-item").dataset.idx;
-          toggleActionItem(id, idx, cb.checked);
-        });
-      });
-      card.querySelectorAll('[data-action="edit-ai"]').forEach(function(span){
-        span.addEventListener("blur", function(){
-          var idx = +span.closest(".action-item").dataset.idx;
-          editActionItemText(id, idx, span.textContent.trim());
-        });
-      });
-      card.querySelectorAll('[data-action="ai-to-task"]').forEach(function(btn){
-        btn.addEventListener("click", function(){
-          var idx = +btn.closest(".action-item").dataset.idx;
-          convertActionItemToTask(id, idx);
-        });
-      });
-      var addBtn = card.querySelector('[data-action="add-ai"]');
-      var input = card.querySelector('[data-action="new-ai"]');
-      function submitAi(){
-        var val = input.value.trim();
-        if(!val) return;
-        addActionItem(id, val);
-        input.value = "";
-      }
-      addBtn.addEventListener("click", submitAi);
-      input.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); submitAi(); } });
-    });
-    restoreEditFocus(list, focusState);
-  }
-
-  function meetingById(id){ return state.meetings.find(function(m){ return m.id===id; }); }
-  function updateMeeting(id, patch){
-    if(state.db){ state.db.collection("meetings").doc(id).update(patch).catch(function(e){ console.warn(e); }); }
-    else { var m=meetingById(id); if(m) Object.assign(m, patch); renderAll(); }
-  }
-  function deleteMeeting(id){
-    if(state.db){ state.db.collection("meetings").doc(id).delete().catch(function(e){ console.warn(e); }); }
-    else { state.meetings = state.meetings.filter(function(m){ return m.id!==id; }); renderAll(); }
-  }
-  function addActionItem(meetingId, text){
-    var m = meetingById(meetingId); if(!m) return;
-    var items = (m.actionItems||[]).concat([{ text:text, done:false }]);
-    updateMeeting(meetingId, { actionItems: items });
-  }
-  function toggleActionItem(meetingId, idx, done){
-    var m = meetingById(meetingId); if(!m) return;
-    var items = (m.actionItems||[]).slice();
-    if(!items[idx]) return;
-    items[idx] = Object.assign({}, items[idx], { done: done });
-    updateMeeting(meetingId, { actionItems: items });
-  }
-  function editActionItemText(meetingId, idx, text){
-    var m = meetingById(meetingId); if(!m) return;
-    var items = (m.actionItems||[]).slice();
-    if(!items[idx]) return;
-    items[idx] = Object.assign({}, items[idx], { text: text });
-    updateMeeting(meetingId, { actionItems: items });
-  }
-  function convertActionItemToTask(meetingId, idx){
-    var m = meetingById(meetingId); if(!m) return;
-    var items = (m.actionItems||[]).slice();
-    if(!items[idx] || items[idx].taskId) return;
-    addTask({ title: items[idx].text, project: "general", owners: state.me ? [state.me] : [] });
-    items[idx] = Object.assign({}, items[idx], { taskId: "pending" });
-    updateMeeting(meetingId, { actionItems: items });
-  }
-
   /* ---------------- team ---------------- */
   function renderTeam(){
     var grid = document.getElementById("teamGrid");
@@ -2013,7 +1752,6 @@
   /* ---------------- view switching ---------------- */
   var VIEW_META = {
     dashboard: { title:"Dashboard", sub:"This week at a glance, for the whole team." },
-    meetings: { title:"Meetings", sub:"Notes and action items from your weekly syncs." },
     projects: { title:"Proposals", sub:"Every proposal in flight — client details, submission deadlines, and any extra to-dos, all in one place." },
     notes: { title:"Notes", sub:"Quality-control remarks and heads-up notes, pinned for the whole team to see." },
     team: { title:"Team", sub:"" }
@@ -2036,11 +1774,24 @@
     if(btn) transitionProposalStatus(btn.dataset.id, "Submitted");
     var undoBtn = e.target.closest('[data-action="undo-reopen"]');
     if(undoBtn) undoReopenProposal(undoBtn.dataset.id);
+    var chip = e.target.closest(".mini-chip");
+    if(chip){
+      var picker = chip.closest('.owner-picker[data-role="pipeline-owners"]');
+      if(picker){
+        var pid = picker.dataset.id;
+        var p = state.projects.find(function(x){ return x.id===pid; }); if(!p) return;
+        var owners = proposalOwners(p).slice();
+        var idx = owners.indexOf(chip.dataset.id);
+        if(idx>-1) owners.splice(idx,1); else owners.push(chip.dataset.id);
+        updateProject(pid, { owners: owners });
+      }
+    }
   });
-  /* Status/deadline/submit-by are editable straight from the Pipeline table now,
-     so this decreases the number of clicks vs opening the proposal in the
-     Proposals tab. Same data, same helpers — edits here show up there instantly
-     (and vice versa) since both read/write the same proposal record. */
+  /* Status/deadline/submit-by/name/client/bd/language/country/owners are all
+     editable straight from the Pipeline table now, so this decreases the
+     number of clicks vs opening the proposal in the Proposals tab. Same data,
+     same helpers — edits here show up there instantly (and vice versa) since
+     both read/write the same proposal record. */
   document.getElementById("pipelineTableBody").addEventListener("change", function(e){
     var el = e.target;
     var pid = el.dataset.id, field = el.dataset.field;
@@ -2247,14 +1998,14 @@
     else if(state.rangeMode==="month") state.refDate = addMonths(state.refDate, dir);
     else state.refDate = addYears(state.refDate, dir);
     state.currentRange = computeRange(state.rangeMode, state.refDate);
-    renderRangeNav(); renderDashboard(); renderMeetings(); renderProjects();
+    renderRangeNav(); renderDashboard(); renderProjects();
   }
   document.getElementById("rangePrev").addEventListener("click", function(){ shiftRange(-1); });
   document.getElementById("rangeNext").addEventListener("click", function(){ shiftRange(1); });
   document.getElementById("rangeToday").addEventListener("click", function(){
     state.refDate = new Date();
     state.currentRange = computeRange(state.rangeMode, state.refDate);
-    renderRangeNav(); renderDashboard(); renderMeetings(); renderProjects();
+    renderRangeNav(); renderDashboard(); renderProjects();
   });
   document.getElementById("rangeModeToggle").addEventListener("click", function(e){
     var btn = e.target.closest("[data-mode]"); if(!btn) return;
@@ -2262,7 +2013,7 @@
     document.querySelectorAll("#rangeModeToggle .toggle-chip").forEach(function(b){ b.classList.toggle("on", b===btn); });
     state.refDate = new Date();
     state.currentRange = computeRange(state.rangeMode, state.refDate);
-    renderRangeNav(); renderDashboard(); renderMeetings(); renderProjects();
+    renderRangeNav(); renderDashboard(); renderProjects();
   });
 
   document.getElementById("addProjectForm").addEventListener("submit", function(e){
@@ -2313,8 +2064,9 @@
     titleEl.focus();
   });
 
-  document.getElementById("filterMeetingClient").addEventListener("change", function(){ state.filters.meetingClient = this.value; renderMeetings(); });
   document.getElementById("filterProjectOwner").addEventListener("change", function(){ state.filters.projectOwner = this.value; renderProjects(); });
+  document.getElementById("filterProjectClient").addEventListener("input", function(){ state.filters.projectClient = this.value; renderProjects(); });
+  document.getElementById("filterProjectBd").addEventListener("input", function(){ state.filters.projectBd = this.value; renderProjects(); });
 
   document.getElementById("addNoteForm").addEventListener("submit", function(e){
     e.preventDefault();
@@ -2378,35 +2130,6 @@
     dnpOwners.innerHTML = ownerChipsHtml(state.me ? [state.me] : []);
     wireOwnerPickerToggle(dnpOwners);
     closeAddProjectModal();
-  });
-
-  document.getElementById("addMeetingForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    var title = document.getElementById("newMeetingTitle").value.trim();
-    var date = document.getElementById("newMeetingDate").value;
-    if(!title || !date) return;
-    var attEl = document.getElementById("newMeetingAttendees");
-    var attendees = attEl.dataset.selected ? JSON.parse(attEl.dataset.selected) : Array.from(document.querySelectorAll(".attendee-chip.on")).map(function(c){ return c.dataset.id; });
-    var payload = {
-      title: title,
-      client: document.getElementById("newMeetingClient").value.trim(),
-      date: date,
-      time: document.getElementById("newMeetingTime").value || "10:00",
-      endTime: document.getElementById("newMeetingEndTime").value || "",
-      attendees: attendees,
-      notes: document.getElementById("newMeetingNotes").value,
-      actionItems: [],
-      example: false,
-      createdBy: state.me || null,
-      createdAt: Date.now()
-    };
-    if(state.db){ state.db.collection("meetings").add(payload).catch(function(err){ console.warn(err); }); }
-    else { payload.id = uid(); state.meetings.push(payload); renderAll(); }
-    e.target.reset();
-    document.getElementById("newMeetingTime").value = "10:00";
-    document.getElementById("newMeetingEndTime").value = "11:00";
-    attEl.dataset.selected = "";
-    renderWhoamiOwnerLists();
   });
 
   /* ---- whoami modal ---- */
